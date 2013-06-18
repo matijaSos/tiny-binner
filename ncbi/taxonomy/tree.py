@@ -27,6 +27,22 @@ class TaxTree ():
     def load (self, nodes_file):
         self.parent_nodes   = self._h_get_tax_nodes(nodes_file)
         self.child_nodes    = self._h_populate_child_nodes()
+
+    def load_taxonomy_data(self, data_access):
+        '''
+        Uses data access object to find organism name and 
+        rank of each of the tax IDs.
+        For each tax ID creates a node of type TaxNode
+        After invoking this method, there is nodes parameter
+        of type dict(key=tax_id:int, value=node:TaxNode)
+        '''
+        self.nodes = {}
+        for tax_id in self.parent_taxid.keys():
+            org_name = data_access.get_organism_name(tax_id)
+            rank = data_access.get_organism_rank(tax_id)
+            tax_node = TaxNode(org_name, rank)
+            self.nodes[tax_id] = node
+
     
     def is_child (self, child_taxid, parent_taxid):
         ''' Test if child_taxid is child node of parent_taxid
@@ -48,9 +64,6 @@ class TaxTree ():
             if tmp_parent_taxid == parent_taxid:
                 return True
             
-            
-
-    ############ ############ ##############
     def find_lca (self, taxid_list):
         ''' Finds the lowest common ancestor of
             a list of nodes
@@ -83,42 +96,15 @@ class TaxTree ():
                 self.num_visited[taxid]     += 1
                 if self.num_visited[taxid] == num_of_nodes:
                     
-                    self.lca_root = taxid
-                    self._h_set_visited_nodes() 
+                    self.lca_root = taxid 
                     return taxid
             # refresh current nodes
             current_taxids = parent_nodes
 
-    def get_taxonomy_lineage (self, taxid, db_access):
-        '''
-        Fetches taxonomy lineage for the organism specified 
-        by its taxonomy ID.
-        @param taxid (int) taxonomy id
-        @param db_access (DbQuery)
-        @return lineage (list) list of scientific names of 
-        organism that are ancestors of taxid
-        '''
-
-        lineage_org_names = []
-        lineage_org_taxids = []
-
-        current_node = taxid
-        while current_node != self.root:
-            lineage_org_taxids.append(current_node)
-            if not self.parent_nodes.has_key(current_node):
-                break
-            current_node = self.parent_nodes[current_node]
-        lineage_org_taxids.reverse()
-
-        for taxid in lineage_org_taxids:
-            organism_name = db_access.get_organism_name(taxid)
-            if organism_name:
-                lineage_org_names.append (organism_name)
-
-        return lineage_org_names
 
     def get_relevant_taxid (self, tax_id):
         return self.tax2relevantTax.get(tax_id, -1)
+
 
     def _h_get_tax_nodes        (self, nodes_file):
         '''Loads the taxonomy nodes in a dictionary
@@ -136,18 +122,6 @@ class TaxTree ():
         if key == value: self.root = int(key)
         return int(key), int(value)
     
-
-    def _h_set_visited_nodes (self):
-        ''' Creates class for all the taxids of the nodes visited
-            in the LCA tree
-        '''
-        self.visited_nodes = {}
-        for taxid in self.num_visited:
-            print self.num_visited[taxid]
-            self.visited_nodes[taxid] = TaxNode (
-                                                 taxid, 
-                                                 self.num_visited[taxid]
-                                                 )
 
     def _h_find_taxnode_file(self):
         ''' Searches recursively through the current
@@ -244,17 +218,18 @@ class TaxTree ():
 
 class TaxNode (object):
     '''
-    Contains information relevant to LCA
-    taxonomy tree traversal. 
-    Relevant informations is:
-        - number of times node has been reported in the alignment
-        - blast scores for each alignment
-        - best  blast score
+    Taxonomy nodes hold information on relevant 
+    taxonomy data, which are:
+    * organism name (scientific)
+    * taxonomy rank
+    * score (arbitrary)
     '''
 
 
-    def __init__(self, taxid, num_traversed = None):
+    def __init__(self, organism_name, rank, score=0.):
+        self.organism_name = organism_name
+        self.rank = rank
+        self.score = score
 
-        self.taxid              = taxid
-        self.num_traversed      = num_traversed
+        
 

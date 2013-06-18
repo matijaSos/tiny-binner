@@ -6,6 +6,7 @@ sys.path.append(os.getcwd())
 
 from utils.argparser import *
 from ncbi.db.data_access import DataAccess
+from ncbi.taxonomy.tree import TaxTree
 from data.containers.read import ReadContainer
 
 def log_start (log, args):
@@ -50,9 +51,12 @@ def main():
     read_container = ReadContainer()
     read_container.load_alignment_data(args.input)
     read_container.set_taxids(dataAccess)
-    for read in read_container.fetch_all_reads(format=list):
-        for aln in read.get_alignments():
-            print aln.taxid
+
+    #----------------------------------#
+    #-------- TAXONOMY TREE -----------#
+    tax_tree = TaxTree() 
+    tax_tree.load_taxonomy_data() 
+
 
 
     log.info('BINNER EXIT')
