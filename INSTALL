@@ -1,0 +1,27 @@
+1. Installation
+
+1.1. Virtual envoronment - sandbox
+To use the Binner program a virtual environment must be set up. The virtual
+environment (virtualenv) can be downloaded from 
+https://pypi.python.org/packages/source/v/virtualenv/virtualenv-1.9.1.tar.gz
+
+To install the virtual environment run the following commands:
+curl -O https://pypi.python.org/packages/source/v/virtualenv/virtualenv-1.9.1.tar.gz
+tar -xvf virtualenv-1.9.1.tar.gz
+python virtualenv-1.9.1/virtualenv.py --distribute .sandbox
+
+To activate the virtual environmet run the folowing command:
+source .sandbox/bin/activate
+
+To deactivate the virtual environment run the folowing command:
+deactivate
+
+1.2. Required packages
+To install all the required packages into the virtual environment, first
+activate the virtual environment and then run the following command:
+pip install -r requirements.txt
+
+1.3. Install Binner for development
+To register the project main folder in the path used for import statements run
+the folowing command:
+python setup.py develop
