@@ -68,7 +68,7 @@ class Read (object):
     def is_host(self):
         '''
         Returns host status of read
-        
+
         :rtype boolean: True if read is potential host read,
         False if not, and None if still undecided
         '''
@@ -82,6 +82,9 @@ class Read (object):
         '''
         assert (format in [iter, list, set])
         return format(self.alignment_locations)
+
+    def set_alignments (self, alignments):
+        self.alignment_locations = alignments
 
     def has_alignments (self):
         return len(self.alignment_locations) > 0

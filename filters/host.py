@@ -20,28 +20,39 @@ def filter_potential_hosts_alignments(reads, tax2category, potential_hosts, dele
     into neither category.
     '''
 
+    #---- HOW TO FILTER READ (DELETE/MARK) -----#
+    filter_alignment = determine_filtering_method (delete_host_alignments)
+    #---- WHAT TO DO WITH UNASSIGNED TAXIDS ----# 
     if filter_unassigned:
         potential_hosts.append(unassigned_taxid)
-    
+
     for read in reads:
-        host_alns_indexes = []
         alignments = read.get_alignments(format=list)
-        for i in range(0,len(alignments)):
-            read_alignment = alignments[i]
+        potential_host_indexes = []
+
+        for i in range(0, len(alignments)):
+            read_alignments = alignments[i]
+
             if read_alignment.tax_id is None:
-                host_alns_indexes.append(i)
-                continue
+                potential_host_indexes.append(i)
+
             taxid_category = tax2category.get(read_alignment.tax_id, unassigned_taxid)
             if taxid_category in potential_hosts:
-                host_alns_indexes.append(i)
+                potential_host_indexes.append(i)
             else:
                 read_alignment.potential_host = False
 
         if delete_host_alignments:
-            alignments.remove(host_alns_indexes)
+            for i in reversed(potential_host_indexes):
+                alignments.pop(i)
         else:
-            for i in host_alns_indexes:
+            for i in potential_host_indexes:
                 alignments[i].potential_host = True
+
+        read.set_alignments(alignments)
+
+    return reads
+
 
 
 def filter_potential_host_reads(reads, tax2category, potential_hosts, delete_reads, filter_unassigned, unassigned_taxid, find_host_status, percentage=0.5):
@@ -117,10 +128,14 @@ def are_all_alignments_host(read_alignments, tax2category, potential_hosts):
 
 def determine_filtering_method(delete_host):
     if delete_host:
-        def filter_alignment(x, status):
-            if status:
-                x = None
+        def filter_alignment(x_list, new_x, status):
+            if not status:
+                new_x.potential_host = False
+                x_list.append(new_x)
+            # else do nothing...
     else:
-        def filter_alignment(x, status):
-            x.potential_host = status
+        def filter_alignment(x_list, new_x, status):
+            new_x.potential_host = status
+            x_list.append(new_x)
+
     return filter_alignment
