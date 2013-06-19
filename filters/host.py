@@ -26,12 +26,13 @@ def filter_potential_hosts_alignments(reads, tax2category, potential_hosts, dele
     if filter_unassigned:
         potential_hosts.append(unassigned_taxid)
 
+    #-------------- FILTERING ------------------#
     for read in reads:
         alignments = read.get_alignments(format=list)
         potential_host_indexes = []
 
         for i in range(0, len(alignments)):
-            read_alignments = alignments[i]
+            read_alignment = alignments[i]
 
             if read_alignment.tax_id is None:
                 potential_host_indexes.append(i)
@@ -77,8 +78,6 @@ def filter_potential_host_reads(reads, tax2category, potential_hosts, delete_rea
     is_best_score_host, perc_of_host_alignments_larger_than and are_all_alignments_host
     '''
 
-    #---- HOW TO FILTER READ (DELETE/MARK) -----#
-    filter_read = determine_filtering_method(delete_reads)
     #---- WHAT TO DO WITH UNASSIGNED TAXIDS ----# 
     if filter_unassigned:
         potential_hosts.append(unassigned_taxid)
@@ -90,12 +89,24 @@ def filter_potential_host_reads(reads, tax2category, potential_hosts, delete_rea
     if isinstance(reads, iter):
         reads = list(reads)
 
-    #---------------- FILTERING  ---------------# 
+    # 1. Identify possible host reads
+    potential_host_indexes = []
     for i in range(0, len(reads)):
         read = reads[i]
         is_host = find_host_status(read.get_alignments(), tax2category)
-        filter_read(read, is_host)
-
+        if is_host:
+            potential_host_indexes.append(i)
+        else:
+            read.potential_host = False
+    
+    # 2.  Mark / delete reads said to be potential hosts
+    if delete_reads:
+        for i in reversed(potential_host_indexes):
+            reads.pop(i)
+    else:
+        for i in potential_host_indexes:
+            reads[i].potential_host = True
+    return reads
 
 def is_best_score_host(read_alignments, tax2category, potential_hosts):
     largest_score_alignment = max(read_alignments, key=attrgetter('score'))
