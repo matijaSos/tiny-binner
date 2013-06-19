@@ -25,8 +25,10 @@ class ReadContainer (object):
     def set_taxids (self, data_access):
         for read in self.fetch_all_reads(format=iter):
             for alignment in read.get_alignments():
-                taxid = data_access.get_taxids([alignment.genome_index])
-                alignment.tax_id = taxid
+                taxid = data_access.get_taxids([alignment.genome_index], format=list)
+                if not taxid:
+                    alignment.tax_id = None
+                alignment.tax_id = taxid[0]
 
     def get_protein_ids(self, exclude_host=False):
         protein_ids = set([])
