@@ -1,7 +1,7 @@
 from  collections       import defaultdict
 import os,sys 
 sys.path.append(os.getcwd())
-
+from utils.progressbar import print_progress
 
 class TaxTree ():
     ''' Loads the NCBI taxonomy tree, creates both
@@ -37,11 +37,15 @@ class TaxTree ():
         of type dict(key=tax_id:int, value=node:TaxNode)
         '''
         self.nodes = {}
-        for tax_id in self.parent_taxid.keys():
+        total = len(self.parent_nodes)
+        current = 0
+        for tax_id in self.parent_nodes.keys():
             org_name = data_access.get_organism_name(tax_id)
             rank = data_access.get_organism_rank(tax_id)
             tax_node = TaxNode(org_name, rank)
-            self.nodes[tax_id] = node
+            self.nodes[tax_id] = tax_node
+            print_progress(current, total)
+            current += 1
 
     
     def is_child (self, child_taxid, parent_taxid):
@@ -230,6 +234,9 @@ class TaxNode (object):
         self.organism_name = organism_name
         self.rank = rank
         self.score = score
+
+    def __str__ (self):
+        return "Org name: %s\nRank:     %s\n" % ( self.organism_name, self.rank)
 
         
 
