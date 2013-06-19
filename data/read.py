@@ -13,7 +13,7 @@ class Read (object):
         self.id                     = read_id
         self.length                 = read_length
         self.alignment_locations    = alignment_locations  # Jel ovo [ReadAlnLocation]? Treba iskomentirati!!!
-        self.is_host_read           = False
+        self.potential_host         = None
         
     
     @staticmethod
@@ -65,8 +65,14 @@ class Read (object):
         return Read(newRead_id, newRead_length, newRead_aln_locs)
 
 
-    def set_host_status(self, is_host_read):
-        self.is_host_read = is_host_read
+    def is_host(self):
+        '''
+        Returns host status of read
+        
+        :rtype boolean: True if read is potential host read,
+        False if not, and None if still undecided
+        '''
+        return self.potential_host
 
     def get_alignments (self, format=list):
         '''
