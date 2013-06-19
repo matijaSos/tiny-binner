@@ -31,7 +31,7 @@ def filter_potential_hosts_alignments(reads, tax2category, potential_hosts, dele
                 continue
             taxid_category = tax2category.get(read_alignment.tax_id, unassigned_taxid)
             if taxid_category in potential_hosts:
-                filter_alignment(read_alignment)
+                filter_alignment(read_alignment, True)
 
 
 def filter_potential_host_reads(reads, tax2category, potential_hosts, delete_reads, filter_unassigned, unassigned_taxid, find_host_status, percentage=0.5):
@@ -74,7 +74,7 @@ def filter_potential_host_reads(reads, tax2category, potential_hosts, delete_rea
         read = reads[i]
         is_host = find_host_status(read.get_alignments(), tax2category)
         if is_host:
-            filter_read(read)
+            filter_read(read, is_host)
 
 
 def is_best_score_host(read_alignments, tax2category, potential_hosts):
@@ -89,7 +89,7 @@ def perc_of_host_alignments_larger_than(read_alignments, tax2category, potential
     aln_count = 0
     for read_alignment in read_alignments:
         category = tax2category.get(read_alignment.tax_id, None)
-        if category is None of category in potential_hosts:
+        if category is None or category in potential_hosts:
             host_aln_count += 1
         aln_count += 1
 
@@ -108,7 +108,9 @@ def are_all_alignments_host(read_alignments, tax2category, potential_hosts):
 
 def determine_filtering_method(delete_host):
     if delete_host:
-        filter_alignment = lambda x: x = None
+        def filter_alignment(x, status):
+            x = None
     else:
-        filter_alignment = lambda x, status: setattr(x, 'potential_host', status)
+        def filter_alignment(x, status):
+            setattr(x, 'potential_host', status)
     return filter_alignment
