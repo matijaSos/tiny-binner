@@ -20,20 +20,28 @@ def filter_potential_hosts_alignments(reads, tax2category, potential_hosts, dele
     into neither category.
     '''
 
-    filter_alignment = determine_filtering_method(delete_host_alignments)
     if filter_unassigned:
         potential_hosts.append(unassigned_taxid)
     
     for read in reads:
-        for read_alignment in read.get_alignments():
+        host_alns_indexes = []
+        alignments = read.get_alignments(format=list)
+        for i in range(0,len(alignments)):
+            read_alignment = alignments[i]
             if read_alignment.tax_id is None:
-                filter_alignment(read_alignment)
+                host_alns_indexes.append(i)
                 continue
             taxid_category = tax2category.get(read_alignment.tax_id, unassigned_taxid)
             if taxid_category in potential_hosts:
-                filter_alignment(read_alignment, True)
+                host_alns_indexes.append(i)
             else:
-                filter_alignment(read_alignment, False)
+                read_alignment.potential_host = False
+
+        if delete_host_alignments:
+            alignments.remove(host_alns_indexes)
+        else:
+            for i in host_alns_indexes:
+                alignments[i].potential_host = True
 
 
 def filter_potential_host_reads(reads, tax2category, potential_hosts, delete_reads, filter_unassigned, unassigned_taxid, find_host_status, percentage=0.5):
