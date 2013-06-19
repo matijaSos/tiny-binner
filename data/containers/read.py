@@ -26,7 +26,7 @@ class ReadContainer (object):
         for read in self.fetch_all_reads(format=iter):
             for alignment in read.get_alignments():
                 taxid = data_access.get_taxids([alignment.genome_index])
-                setattr(alignment, 'tax_id', taxid)
+                alignment.tax_id = taxid
 
     def get_protein_ids(self, exclude_host=False):
         protein_ids = set([])

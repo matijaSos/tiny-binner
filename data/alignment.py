@@ -17,6 +17,7 @@ class ReadAlnLocation (object):
         self.location_span          = location_span
         self.complement             = complement
         self.active                 = active
+        self.tax_id                 = None
         # self.determine_coding_seqs()
         # Sto je sa .aligned_cdss? Navesti to negdje u komentarima ako postoji!
     
