@@ -8,6 +8,7 @@ from utils.argparser import *
 from ncbi.db.data_access import DataAccess
 from ncbi.taxonomy.tree import TaxTree
 from data.containers.read import ReadContainer
+import filters.host as host_filter
 
 def log_start (log, args):
     log.info('BINNER RUN')
@@ -55,7 +56,17 @@ def main():
     #----------------------------------#
     #-------- TAXONOMY TREE -----------#
     tax_tree = TaxTree() 
-    tax_tree.load_taxonomy_data() 
+    # tax_tree.load_taxonomy_data(dataAccess) 
+
+    host_filter.filter_potential_hosts_alignments(
+        read_container.fetch_all_reads(), 
+        tax_tree.tax2relevantTax, 
+        tax_tree.potential_hosts, 
+        delete_host_alignments = True, 
+        filter_unassigned = True, 
+        unassigned_taxid=-1):
+
+
 
 
 
