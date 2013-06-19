@@ -80,6 +80,11 @@ class ReadContainer (object):
         for read in reads:
             for read_alignment in read.get_alignments(format=iter):
                 yield read_alignment.nucleotide_accession
+
+    def set_new_reads (self, new_reads):
+        self.read_repository = {}
+        for read in new_reads:
+            self.read_repository[read.id] = read
         
     
     def _add_read_from_str (self, read_str):
@@ -87,3 +92,4 @@ class ReadContainer (object):
         assert (not self.read_repository.has_key(read.id))
         self.read_repository[read.id] = read
         
+
