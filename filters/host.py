@@ -63,6 +63,7 @@ def filter_potential_host_reads(reads, tax2category, potential_hosts, delete_rea
     microbes. Such organisms are some artificially created DNA strands or 
     unclassified environmental samples. For such organisms you can choose
     whether to filter them out or not.
+    Reads with no alignments will be declared as microbe reads (not potential host)
 
     :param reads list or iterator of Read objects
     :param tax2category dict(key=taxid, value=category_taxid). Categories are
@@ -86,14 +87,18 @@ def filter_potential_host_reads(reads, tax2category, potential_hosts, delete_rea
         raise ValueError('''Supplied find_host_status method does not match any of the options for filtering: \
             ... is_best_score_host, perc_of_host_alignments_larger_than and are_all_alignments_host''')
 
-    if isinstance(reads, iter):
+    if isinstance(reads, type(iter)):
         reads = list(reads)
 
     # 1. Identify possible host reads
     potential_host_indexes = []
     for i in range(0, len(reads)):
         read = reads[i]
-        is_host = find_host_status(read.get_alignments(), tax2category)
+        alignments = read.get_alignments(format=list)
+        if len(alignments) == 0:
+            read.potential_host = False
+            continue
+        is_host = find_host_status(alignments, tax2category, potential_hosts)
         if is_host:
             potential_host_indexes.append(i)
         else:
