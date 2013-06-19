@@ -4,7 +4,7 @@ from utils.location import Location
 import time
 
 class ReadContainer (object):
-    ''' Contains all the reads loaded from an 
+    ''' Contains all the reads loaded from an
         alignment file. Can be queried by read id.
     '''
     def __init__(self):
@@ -12,7 +12,7 @@ class ReadContainer (object):
         (dict) read_repository Dictionary where value is (Read)read and key is (str)read id.
         """
         self.read_repository = {}
-        
+
     def load_alignment_data (self, read_alignment_file):
         ''' Adds all the reads in the alignment file to the
             read repository.
@@ -26,9 +26,10 @@ class ReadContainer (object):
         for read in self.fetch_all_reads(format=iter):
             for alignment in read.get_alignments():
                 taxid = data_access.get_taxids([alignment.genome_index], format=list)
-                if not taxid:
+                if taxid is None or len(taxid) == 0:
                     alignment.tax_id = None
-                alignment.tax_id = taxid[0]
+                else:
+                    alignment.tax_id = taxid[0]
 
     def get_protein_ids(self, exclude_host=False):
         protein_ids = set([])
@@ -48,14 +49,14 @@ class ReadContainer (object):
         mentioned in the alignment file
         @param record_container (RecordContainer)
         '''
-        
+
         for read in self.fetch_all_reads(format=iter):
             for read_alignment in read.get_alignments(format=iter):
                 record = record_container.fetch_existing_record(
                     read_alignment.nucleotide_accession)
                 read_alignment.determine_coding_seqs_optimal(record)
 
-    
+
     def fetch_read (self, read_id):
         if self.read_repository.has_key(read_id):
             return self.read_repository[read_id]
@@ -65,15 +66,15 @@ class ReadContainer (object):
 
     def fetch_all_reads (self, format=iter):
         return format(self.read_repository.values())
-    
+
     def fetch_all_reads_versions(self):
         '''
         Returns an iterator returning all versions of all reads in this
         container
-        
+
         .. note::
             Duplicate values are not filtered out
-            
+
         :returns: iterator returning versions of reads
         '''
         reads = self.fetch_all_reads(format=iter)
@@ -85,11 +86,11 @@ class ReadContainer (object):
         self.read_repository = {}
         for read in new_reads:
             self.read_repository[read.id] = read
-        
-    
+
+
     def _add_read_from_str (self, read_str):
         read = Read.from_read_str(read_str)
         assert (not self.read_repository.has_key(read.id))
         self.read_repository[read.id] = read
-        
+
 
