@@ -62,11 +62,9 @@ def main():
         read_container.fetch_all_reads(), 
         tax_tree.tax2relevantTax, 
         tax_tree.potential_hosts, 
-        delete_host_alignments = True, 
+        delete_host_alignments = False, 
         filter_unassigned = True, 
-        unassigned_taxid=-1):
-
-
+        unassigned_taxid=-1)
 
 
 
