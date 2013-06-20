@@ -65,6 +65,7 @@ def main():
         delete_host_alignments = False, 
         filter_unassigned = True, 
         unassigned_taxid=-1)
+    data_access.clear_cache()
 
 
 
