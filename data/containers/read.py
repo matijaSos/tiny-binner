@@ -23,16 +23,16 @@ class ReadContainer (object):
             self._add_read_from_str(line)
 
     def set_taxids (self, data_access):
-        gis = []
+        gis = set()
         for read in self.fetch_all_reads(format=iter):
             for alignment in read.get_alignments():
-                gis.append(alignment.genome_index)
+                gis.add(alignment.genome_index)
                 #taxid = data_access.get_taxids([alignment.genome_index], format=list)
                 #if taxid is None or len(taxid) == 0:
                 #    alignment.tax_id = None
                 #else:
                 #    alignment.tax_id = taxid[0]
-        taxids = data_access.get_taxids(gis, format=dict)
+        taxids = data_access.get_taxids(list(gis), format=dict)
         for read in self.read_repository.values():
             for alignment in read.get_alignments():
                 alignment.tax_id = taxids.get(alignment.genome_index, None)
