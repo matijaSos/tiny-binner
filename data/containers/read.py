@@ -23,13 +23,19 @@ class ReadContainer (object):
             self._add_read_from_str(line)
 
     def set_taxids (self, data_access):
+        gis = []
         for read in self.fetch_all_reads(format=iter):
             for alignment in read.get_alignments():
-                taxid = data_access.get_taxids([alignment.genome_index], format=list)
-                if taxid is None or len(taxid) == 0:
-                    alignment.tax_id = None
-                else:
-                    alignment.tax_id = taxid[0]
+                gis.append(alignment.genome_index)
+                #taxid = data_access.get_taxids([alignment.genome_index], format=list)
+                #if taxid is None or len(taxid) == 0:
+                #    alignment.tax_id = None
+                #else:
+                #    alignment.tax_id = taxid[0]
+        taxids = data_access.get_taxids(gis, format=dict)
+        for read in self.read_repository.values():
+            for alignment in read.get_alignments():
+                alignment.tax_id = taxids.get(alignment.genome_index, None)
 
     def get_protein_ids(self, exclude_host=False):
         protein_ids = set([])
