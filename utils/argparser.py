@@ -2,31 +2,26 @@ import argparse
 import os
 
 class DefaultBinnerArgParser (argparse.ArgumentParser):
-    def __init__(self, description):
-        self.formatter_class = argparse.ArgumentDefaultsHelpFormatter
-        self.description = description
+    def __init__(self, new_description):
+        argparse.ArgumentParser.__init__(self,
+                formatter_class = argparse.ArgumentDefaultsHelpFormatter,
+                description = new_description)
 
         self._set_default_binner_values()
 
     def _set_default_binner_values(self):
-        self.add_argument('input', help='Input alignment file', 
-                           type=str)
-        self.add_argument('descr', help='XML description schema', 
-                               type=str)
-        self.add_argument('output', help='Output XML file', 
-                               type=str)
         self.add_argument('-l', '--log_configuration',
                                help='Logging configuration file', type=str,
                                default='config' + os.path.sep + 'logging.ini')
         mutexgroup_cds = self.add_mutually_exclusive_group()
-        mutexgroup_cds.add_argument('--cds-db-connection', 
+        mutexgroup_cds.add_argument('--cds-db-connection',
             default='mysql+mysqldb://root:root@localhost/unity',
             help='CDS database connection string')
         mutexgroup_cds.add_argument('--cds-fasta',
             help='CDS fasta file location')
 
         mutexgroup_tax = self.add_mutually_exclusive_group()
-        mutexgroup_tax.add_argument('--ncbitax-db-connection', 
+        mutexgroup_tax.add_argument('--ncbitax-db-connection',
            default='mysql+mysqldb://root:root@localhost/ncbitax',
             help='NCBI Taxonomy database connection string')
         ncbi_tax_files = mutexgroup_tax.add_argument_group()
@@ -36,9 +31,9 @@ class DefaultBinnerArgParser (argparse.ArgumentParser):
             help='NCBI Taxonomy nodes dump')
         ncbi_tax_files.add_argument('--names',
             help='NCBI Taxonomy names dump')
-        self.add_argument('-tt', '--tax-tree', 
-           help='Taxonomy tree location', 
-           default='./ncbi/taxonomy/.data/ncbi_tax_tree')        
+        self.add_argument('-tt', '--tax-tree',
+           help='Taxonomy tree location',
+           default='./ncbi/taxonomy/.data/ncbi_tax_tree')
 
 
 def validate_args(args):
