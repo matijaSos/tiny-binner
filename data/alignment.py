@@ -1,13 +1,14 @@
 from data.containers.record import RecordContainer
 from utils.location import Location
 from utils.location import LoactionParsingException
+from utils.autoslots import Autoslots
 
-class ReadAlnLocation (object):
-    """ Contains information on alignment location on 
+class ReadAlnLocation (Autoslots):
+    """ Contains information on alignment location on
         an NT nucleotide string
     """
-    
-    def __init__ (self, read_id, nucleotide_accession, db_source, genome_index, score, 
+
+    def __init__ (self, read_id, nucleotide_accession, db_source, genome_index, score,
                   location_span, complement, active=True):
         self.read_id                = read_id
         self.nucleotide_accession   = nucleotide_accession
@@ -21,7 +22,7 @@ class ReadAlnLocation (object):
         self.potential_host         = None
         # self.determine_coding_seqs()
         # Sto je sa .aligned_cdss? Navesti to negdje u komentarima ako postoji!
-    
+
     def set_active (self, active):
         '''
         Sets active status for the read alignment.
@@ -31,14 +32,14 @@ class ReadAlnLocation (object):
 
     def set_potential_host_status (self, potential_host):
         '''
-        Set to true if organism is potential host [child of 
+        Set to true if organism is potential host [child of
         animalia kingdom]
-        @param potential_host (boolean) 
+        @param potential_host (boolean)
         '''
         self.potential_host = potential_host
 
     def is_potential_host (self):
-        """ Returns true if organism is potential host 
+        """ Returns true if organism is potential host
         (child of animalia kingdom), false otherwise.
         @return (boolean)
         """
@@ -47,7 +48,7 @@ class ReadAlnLocation (object):
     def determine_coding_seqs (self, record_container):
         ''' Determines which of the CDSs in the record aligned_regions
             aligned to the read.
-            @return list of tuples (cds, intersecting_location) if such exist, 
+            @return list of tuples (cds, intersecting_location) if such exist,
             None if record is not available from the database
         '''
         self.aligned_cdss = []
@@ -64,17 +65,17 @@ class ReadAlnLocation (object):
             print "ReadAlignment/determine_coding_seqs:", e
             self.aligned_cdss = []
             return self.aligned_cdss
-        
+
         for cds in record.cds:
             try:
                 cds_location = Location.from_location_str(cds.location)
-            except LoactionParsingException, e: 
+            except LoactionParsingException, e:
                 print "ReadAlignment/determine_coding_seqs:", e
                 continue
             location_intersection = cds_location.find_intersection (location)
             if location_intersection is not None:
                 self.aligned_cdss.append ((cds, location_intersection))
-        
+
         return self.aligned_cdss
 
     # -------------------------------- Detrmine CDSs - Optimal ---------------------------- #
@@ -91,15 +92,15 @@ class ReadAlnLocation (object):
 
     # ---------- #
 
-    def __get_cds_rel_pos (self, cdss, cds_id, aln_loc): 
+    def __get_cds_rel_pos (self, cdss, cds_id, aln_loc):
         '''Returns position of CDS relative to alignment.
 
             @param  [Cds]       List of CDSs
             @param  (Location)  cds_id CDS we are looking at
             @param  (Location)  aln_loc Alignment Location
 
-            @return (string)    LEFT_OF_ALN  - fully left of alignment      
-                                RIGHT_OF_ALN - fully right or not first which overlaps 
+            @return (string)    LEFT_OF_ALN  - fully left of alignment
+                                RIGHT_OF_ALN - fully right or not first which overlaps
                                 FIRST        - first to overlap
         '''
         cds_loc = Location.from_location_str(cdss[cds_id].location)
@@ -145,7 +146,7 @@ class ReadAlnLocation (object):
 
             if (cds_rel_pos == "LEFT_OF_ALN"):
                 lo = mid + 1
-                
+
             if (cds_rel_pos == "RIGHT_OF_ALN"):
                 hi = mid - 1
 
@@ -166,10 +167,10 @@ class ReadAlnLocation (object):
             aligned to the read.
 
             @param (UnityRecord) record Record that is used
-            @return                  list of tuples (cds, intersecting_location) if such exist, 
+            @return                  list of tuples (cds, intersecting_location) if such exist,
                                      None if record is not available from the database
         '''
-        
+
         self.aligned_cdss = []
 
         # If not possible to fetch a record from the db, return None
@@ -186,7 +187,7 @@ class ReadAlnLocation (object):
             return self.aligned_cdss
 
         # Determine first overlapping CDS - binary search
-        first_ovp_id = self.__find_first_overlapping_CDS_id (aln_location, record.cds) 
+        first_ovp_id = self.__find_first_overlapping_CDS_id (aln_location, record.cds)
 
         # No CDS from the list overlaps - return []
         if (first_ovp_id == None):
@@ -215,18 +216,18 @@ class ReadAlnLocation (object):
         pass
 
 
-class CdsAlignment (object):
+class CdsAlignment (Autoslots):
     ''' Contains all the alignment information for a single
-        CDS, meaning: 
+        CDS, meaning:
         - all the reads mapped to that CDS and
         - their corresponding sublocations
     '''
-    
+
     def __init__ (self, cds):
         self.cds = cds              # CDS object (from Mladen)
         self.aligned_regions = {}   # dictionary of CdsAlnSublocation
         pass
-    
+
     def __hash__ (self):
         return hash ((self.cds.record_id, self.cds.location))
 
@@ -235,25 +236,25 @@ class CdsAlignment (object):
         return (self.cds.record_id, self.cds.location) == (other.cds.record_id, other.cds.location)
 
     def add_aligned_sublocation (self, read_id, aligned_location, score):
-        ''' Adds an aligned region to the cds unless it comes 
+        ''' Adds an aligned region to the cds unless it comes
             from the read already present in the aligned regions
-            @param read_id read id 
-            @param (Location) aligned_location intersection between the CDS and the 
+            @param read_id read id
+            @param (Location) aligned_location intersection between the CDS and the
                     alignment location
             @param score alignment score for this read
         '''
-        
+
         # if the CDS has already been covered by the same read in the past,
-        # discard this one. 
+        # discard this one.
         if self.aligned_regions.has_key(read_id):
             return
-        
+
         aligned_sublocation             = CdsAlnSublocation (read_id, aligned_location, score)
         self.aligned_regions[read_id]   = aligned_sublocation
 
     def is_active(self):
         '''
-        Checks whether CDS alignment is active. 
+        Checks whether CDS alignment is active.
         If all the CDSAlnSublocations are inactive, then the whole CdsAlignment
         is inactive.
         '''
@@ -276,13 +277,13 @@ class CdsAlignment (object):
 
     def get_key (self):
         pass
-        
+
     def contains_read (self, read_id):
-        ''' Determines whether this CDS alignment contains 
+        ''' Determines whether this CDS alignment contains
             a subalignment mapped to the specified read.
         '''
         return True if self.aligned_regions.has_key(read_id) else False
-        
+
     def __str__(self):
         tab = " " * 2
         ret = "CdsAlignment\n"
@@ -293,15 +294,15 @@ class CdsAlignment (object):
             ret += tab*3 + str(aln_reg).replace("\n", "\n"+(tab*3)) + "\n"
         return ret
 
-    
-class CdsAlnSublocation (object):
+
+class CdsAlnSublocation (Autoslots):
     ''' Represents the sublocation of a CDS covered
         by a single read.
     '''
-        
+
     def __init__ (self, read_id, location, score, active=True):
-        ''' @param read_id read ID 
-            @param (Location) location intersection location 
+        ''' @param read_id read ID
+            @param (Location) location intersection location
             @param score alignment score
             @param (boolean) active If active than it maps to CDS that contains it.
         '''

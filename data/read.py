@@ -1,11 +1,12 @@
 
 from data.alignment import ReadAlnLocation
 import logging
+from utils.autoslots import Autoslots
 
 log = logging.getLogger(__name__)
 
-class Read (object):
-    """ Contains all the read-related information, 
+class Read (Autoslots):
+    """ Contains all the read-related information,
         such as the its identifier and the list of alignment
         locations
     """
@@ -14,11 +15,11 @@ class Read (object):
         self.length                 = read_length
         self.alignment_locations    = alignment_locations  # Jel ovo [ReadAlnLocation]? Treba iskomentirati!!!
         self.potential_host         = None
-        
-    
+
+
     @staticmethod
     def from_read_str (read_str):
-        """ Parses the description string and creates a new read from it with 
+        """ Parses the description string and creates a new read from it with
             accompanying alignment locations
         """
         # Attributes for creating new read
@@ -39,7 +40,7 @@ class Read (object):
         if newRead_id.startswith('@'):
             newRead_id = newRead_id[1:]
         num_align = headerList[1];
-        
+
         # Store every alignInfo
         for alignInfo in valList[1:]:
             data = alignInfo.split(','); # [nucl_acc, db_source, GI, score, start, stop, strand]
@@ -77,7 +78,7 @@ class Read (object):
     def get_alignments (self, format=list):
         '''
         Get read alignments for the read.
-        @param: format (collection or iterator) format in which to 
+        @param: format (collection or iterator) format in which to
         acquire the alignments
         '''
         assert (format in [iter, list, set])
