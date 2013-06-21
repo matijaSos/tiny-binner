@@ -26,7 +26,7 @@ class DbQuery(object):
         self._create_sessions()
 
 
-    def get_record (self, version):
+    def get_record (self, version, table='cds'):
         '''
         Returns the record associated with the given accession.version.
         
@@ -34,16 +34,20 @@ class DbQuery(object):
         :returns: UnityRecord - record associated with the given 
                   accession.version. None if no record is found
         '''
+        if table not in ('cds', 'rrna', 'mrna', 'misc_rna'):
+            raise ValueError('Nonexistent table %s. Only cds, rrna, mrna and misc_rna supported.' % table)
+
         sess = self.unity_session()
-        try:
-            
-            records = sess.execute("""
+        db_query = """
             
                 SELECT id, db, version, nucl_gi, taxon, location,
                     protein_id, locus_tag, product, gene, prot_gi
-                FROM cds
+                FROM %s
                 WHERE version=:version;
-            """,
+            """ % table
+        try:
+            
+            records = sess.execute(db_query,
             {
                 'version': version
              })
