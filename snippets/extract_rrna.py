@@ -5,13 +5,28 @@ import argparse
 import sys,os
 sys.path.append(os.getcwd())
 
-from utils.argparser import *
+from utils.argparser import DefaultBinnerArgParser
 from ncbi.db.data_access import DataAccess
 from ncbi.taxonomy.tree import TaxTree
 from data.containers.read import ReadContainer
 from data.containers.record import RecordContainer
 import filters.host as host_filter
 from utils import timeit
+
+class ExtractRnasParser(DefaultBinnerArgParser):
+    def __init__(self):
+        super(ExtractRnasParser, self).__init__('''Loads input alignment file,\
+        ... filteres host reads and produces file with all records found \
+        ...among rrnas.'''
+        )
+        self.add_argument('input', help='Input alignment file', 
+                           type=str)
+        self.add_argument('output', help='Output file with list of found rna accessions.',
+                           type=str)
+        self.add_argument('-dh', '--determine_host', help='determine host method',
+            choices=['best_score_host', '50perc_host', 'all_host'],
+            default = '50perc_host')
+
 
 def log_start (log, args):
     log.info('EXTRACT RRNA RUN')
@@ -33,11 +48,8 @@ def main():
     #------ INPUT ARGUMENTS -----------#
     # 1. input alignment file
     # 2. output rrna accession file
-    if len(sys.argv) < 3:
-        print 'Usage:\npython extract_rrna.py <INPUT_ALIGNMENT FILE> <OUTPUT_RRNA_ACCESSIONS_FILE>'
-        sys.exit(-1)
-    input_aln_file = sys.argv[1]
-    output_rrna_accession_file = sys.argv[2]
+    argparser = ExtractRnasParser()
+    args  = argparser.parse_args()
 
     #----------------------------------#
     #------- DATA LOGGING INIT --------#
