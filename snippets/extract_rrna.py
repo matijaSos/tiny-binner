@@ -14,9 +14,8 @@ import filters.host as host_filter
 from utils import timeit
 
 def log_start (log, args):
-    log.info('BINNER RUN')
+    log.info('EXTRACT RRNA RUN')
     log.info("Input: %s" % args.input)
-    log.info("Xml template: %s" % args.descr)
     log.info("Output: %s" %  args.output)
 
 
@@ -32,10 +31,13 @@ def main():
 
     #----------------------------------#
     #------ INPUT ARGUMENTS -----------#
-    argparser = get_binner_argparser()
-    args  = argparser.parse_args()
-    error = validate_args(args)
-    if error: exit(-1)
+    # 1. input alignment file
+    # 2. output rrna accession file
+    if len(sys.argv) < 3:
+        print 'Usage:\npython extract_rrna.py <INPUT_ALIGNMENT FILE> <OUTPUT_RRNA_ACCESSIONS_FILE>'
+        sys.exit(-1)
+    input_aln_file = sys.argv[1]
+    output_rrna_accession_file = sys.argv[2]
 
     #----------------------------------#
     #------- DATA LOGGING INIT --------#
@@ -60,7 +62,7 @@ def main():
     #----------------------------------#
     #------- ALIGNMENT DATA SOURCE ----#
     read_container = ReadContainer()
-    timeit(read_container.load_alignment_data, args.input)
+    timeit(read_container.load_alignment_data, input_aln_file)
     raw_input('Alignment file loaded')
     print 'Number of PREFILTERED reads: ', len(read_container.fetch_all_reads(format=list))
     timeit(read_container.set_taxids, dataAccess)
@@ -88,12 +90,11 @@ def main():
     record_container.populate(read_container.fetch_all_reads_versions(), table='rrna')
     raw_input('Records fetched')
 
+    output_rrna_accession_file = open(output_rrna_accession_file, 'w')
     for record in record_container.fetch_all_records():
         if record:
-            print record.version
-
-
-
+            output_rrna_accession_file.write('%s\n' % (record.version))
+    output_rrna_accession_file.close()
     log.info('BINNER EXIT')
 
 
