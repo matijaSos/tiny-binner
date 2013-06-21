@@ -6,10 +6,10 @@ class DataAccess ():
     '''
     Provides access to CDS data and NCBItax data.
     Encapsulates data access, since all data
-    can be accessed in two ways: 
+    can be accessed in two ways:
     * using MySql database (DATABASE type access)
     * by loading raw data from files (FILE type access)
-    This method must provide all methods that would be 
+    This method must provide all methods that would be
     available via standard database querying.
     '''
 
@@ -51,9 +51,9 @@ class DataAccess ():
     def get_record(self, version):
         '''
         Returns the record associated with the given accession.version.
-        
+
         :param version: string - GenBank/EMBL/DDBJ/RefSeq Accesion.Version
-        :returns: UnityRecord - record associated with the given 
+        :returns: UnityRecord - record associated with the given
                   accession.version. None if no record is found
         '''
         return self._db_access.get_record(version)
@@ -64,14 +64,21 @@ class DataAccess ():
 
         :param gis (list) list of integers representing GIs
         "param format (object type) list, set or dict.
-        :rtype based on format parameter, returns either list of 
-        tax IDs or a dictionary mapping gis to tax ids. List can 
+        :rtype based on format parameter, returns either list of
+        tax IDs or a dictionary mapping gis to tax ids. List can
         contain duplicates.
         '''
+        requested_gis = {}
         if self.ncbitax_source == DataAccess.load_type.FILE:
             requested_gis = dict((gi, self._gi2taxid_file_access.get(gi,-1)) for gi in gis)
         else:
-            requested_gis = self._db_access.get_taxids(gis, format=dict)
+            for i in range(len(gis)-1,-1,-1):
+                taxid = self._gi2taxid_cache.get(gis[i], None)
+                if taxid is not None:
+                    requested_gis[gis[i]] = taxid
+                    gis.pop(i)
+            if len(gis):
+                requested_gis.update(self._db_access.get_taxids(gis, format=dict))
             for (gi, taxid) in requested_gis.items():
                 self._gi2taxid_cache[gi] = taxid
         if format != dict:
@@ -113,7 +120,7 @@ class DataAccess ():
     def _h_set_load_type(self, args):
         '''
         Determines how to load each information:
-        * cdss info 
+        * cdss info
         * ncbitax info
         After invoking this method, following parameters will be set:
         * cds_source_type (enum: load_type)
@@ -123,7 +130,7 @@ class DataAccess ():
         '''
         # determine CDS loading location
         if args.cds_fasta is not None:
-            self.cds_source_type = DataAccess.load_type.FILE 
+            self.cds_source_type = DataAccess.load_type.FILE
             self.cds_source      = args.cds_fasta
         else:
             assert (args.cds_db_connection is not None)
