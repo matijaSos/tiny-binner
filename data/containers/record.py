@@ -1,9 +1,10 @@
 
 import logging
+from ncbi.db.access import WrongTableError, DbQuery
 
 class RecordContainer (object):
     ''' Serves as a local Record Repository.
-        If a GenBank/EMBL/DDBJ record has already been 
+        If a GenBank/EMBL/DDBJ record has already been
         fetched from the database, it can be fetched localy
         from the record repository.
     '''
@@ -12,9 +13,9 @@ class RecordContainer (object):
         self.record_repository  = {}
         self.num_missing_records = 0
         self.log = logging.getLogger(__name__)
-    
+
     def get_num_missing_records_stats(self):
-        missed_recs = self.num_missing_records 
+        missed_recs = self.num_missing_records
         all_recs = len(self.record_repository)
         return {'num_missing_records':missed_recs,
                 'num_all_records':all_recs,
@@ -28,11 +29,16 @@ class RecordContainer (object):
         assert (hasattr(db_query, 'get_record'))
         self.db_query = db_query
 
-    def populate (self, versions):
+    def populate (self, versions, table='cds'):
         '''
-        Populates the record container with all the records 
+        Populates the record container with all the records
         that have produced significant alignments
+
+        :param list of NT (GenBank, EMBL, DDBJ) accession.versions
+        :param table (str) available tables are cds, rrna, mrna, misc_rna
         '''
+        if table not in DbQuery.supported_tables:
+            raise WrongTableError(table)
         for version in versions:
             self.fetch_record(version)
 
@@ -43,7 +49,7 @@ class RecordContainer (object):
         '''
         self._add_record(nucleotide_accession)
         return self.record_repository[nucleotide_accession]
-    
+
     def fetch_existing_record (self, nucleotide_accession):
         '''
         @param nucleotide_accession (str)
@@ -58,8 +64,8 @@ class RecordContainer (object):
         @return format(records)
         '''
         assert (format in [iter, list, set])
-        return format(self.record_repository.items())
-        
+        return format(self.record_repository.values())
+
     def _add_record (self, record_id):
         ''' Adds the record from database if not already present
 	   If unable to find entry in database, stores None instead.
