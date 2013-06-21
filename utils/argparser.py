@@ -1,43 +1,45 @@
 import argparse
 import os
 
-def get_binner_argparser():
-    argparser = argparse.ArgumentParser(
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-        description='Reads input and desscription files and prodices output '
-        'file')
-    argparser.add_argument('input', help='Input alignment file', 
-                           type=str)
-    argparser.add_argument('descr', help='XML description schema', 
-                           type=str)
-    argparser.add_argument('output', help='Output XML file', 
-                           type=str)
-    argparser.add_argument('-l', '--log_configuration',
-                           help='Logging configuration file', type=str,
-                           default='config' + os.path.sep + 'logging.ini')
-    mutexgroup_cds = argparser.add_mutually_exclusive_group()
-    mutexgroup_cds.add_argument('--cds-db-connection', 
-        default='mysql+mysqldb://root:root@localhost/unity',
-        help='CDS database connection string')
-    mutexgroup_cds.add_argument('--cds-fasta',
-        help='CDS fasta file location')
+class DefaultBinnerArgParser (argparse.ArgumentParser):
+    def __init__(self, description):
+        self.formatter_class = argparse.ArgumentDefaultsHelpFormatter
+        self.description = description
 
-    mutexgroup_tax = argparser.add_mutually_exclusive_group()
-    mutexgroup_tax.add_argument('--ncbitax-db-connection', 
-       default='mysql+mysqldb://root:root@localhost/ncbitax',
-        help='NCBI Taxonomy database connection string')
-    ncbi_tax_files = mutexgroup_tax.add_argument_group()
-    ncbi_tax_files.add_argument('--gi2taxid',
-        help='NCBI Taxonomy gi2taxid dump file')
-    ncbi_tax_files.add_argument('--nodes',
-        help='NCBI Taxonomy nodes dump')
-    ncbi_tax_files.add_argument('--names',
-        help='NCBI Taxonomy names dump')
-    argparser.add_argument('-tt', '--tax-tree', 
-       help='Taxonomy tree location', 
-       default='./ncbi/taxonomy/.data/ncbi_tax_tree')
+        self._set_default_binner_values()
 
-    return argparser
+    def _set_default_binner_values(self):
+        self.add_argument('input', help='Input alignment file', 
+                           type=str)
+        self.add_argument('descr', help='XML description schema', 
+                               type=str)
+        self.add_argument('output', help='Output XML file', 
+                               type=str)
+        self.add_argument('-l', '--log_configuration',
+                               help='Logging configuration file', type=str,
+                               default='config' + os.path.sep + 'logging.ini')
+        mutexgroup_cds = self.add_mutually_exclusive_group()
+        mutexgroup_cds.add_argument('--cds-db-connection', 
+            default='mysql+mysqldb://root:root@localhost/unity',
+            help='CDS database connection string')
+        mutexgroup_cds.add_argument('--cds-fasta',
+            help='CDS fasta file location')
+
+        mutexgroup_tax = self.add_mutually_exclusive_group()
+        mutexgroup_tax.add_argument('--ncbitax-db-connection', 
+           default='mysql+mysqldb://root:root@localhost/ncbitax',
+            help='NCBI Taxonomy database connection string')
+        ncbi_tax_files = mutexgroup_tax.add_argument_group()
+        ncbi_tax_files.add_argument('--gi2taxid',
+            help='NCBI Taxonomy gi2taxid dump file')
+        ncbi_tax_files.add_argument('--nodes',
+            help='NCBI Taxonomy nodes dump')
+        ncbi_tax_files.add_argument('--names',
+            help='NCBI Taxonomy names dump')
+        self.add_argument('-tt', '--tax-tree', 
+           help='Taxonomy tree location', 
+           default='./ncbi/taxonomy/.data/ncbi_tax_tree')        
+
 
 def validate_args(args):
     error = False
