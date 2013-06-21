@@ -48,7 +48,7 @@ class DataAccess ():
         '''
         self._gi2taxid_cache = {}
 
-    def get_record(self, version):
+    def get_record(self, version, table='cds'):
         '''
         Returns the record associated with the given accession.version.
 
