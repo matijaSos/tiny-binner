@@ -5,6 +5,7 @@ def enum(**enums):
 
 def timeit(function, *args):
     start = time.time()
-    function(*args)
+    ret_value = function(*args)
     stop = time.time()
     print stop-start
+    return ret_value
