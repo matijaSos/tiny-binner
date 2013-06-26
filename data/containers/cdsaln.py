@@ -2,33 +2,33 @@ from collections import defaultdict
 from data.alignment import CdsAlignment
 
 class CdsAlnContainer (object):
-    ''' CDS Alignment Container serves as the storage for all 
-        CDSs reported in the read alignments. 
-        CDS alignment is mapped using record id and cds location 
-        and can be fetched using the tuple containing 
+    ''' CDS Alignment Container serves as the storage for all
+        CDSs reported in the read alignments.
+        CDS alignment is mapped using record id and cds location
+        and can be fetched using the tuple containing
         (record_id, location)
     '''
 
     def __init__(self):
         self.cds_repository = {}
-        self.read2cds       = defaultdict(list)    
+        self.read2cds       = defaultdict(list)
 
     def populate (self, reads):
         '''
-        Populates CDS container from reads. 
-        Iterates through every read, and for each read it goes through 
+        Populates CDS container from reads.
+        Iterates through every read, and for each read it goes through
         all the read alignments. For each alignment, it goes through all the
         locations where the alignments intersects a CDS.
         Each intersected cds will be contained within a CdsALignment object
-        where all the reads mapped to the particular cds are contained. 
+        where all the reads mapped to the particular cds are contained.
         It is possible to extract cds alignment by using cds as a key, and
-        it is also possible to find all the CdsAlignments cointaining a 
+        it is also possible to find all the CdsAlignments cointaining a
         particular read using the read identifier as a key.
         '''
         # Iterate through reads
         for read in reads:
             # skip inactive (potential host) reads
-            if read.is_host_read:
+            if read.potential_host:
                 continue
             # Iterate through read alignments
             for readAln in read.alignment_locations:
@@ -80,5 +80,5 @@ class CdsAlnContainer (object):
         @return (dict)   Subset of .cds_repository..
         """
         return dict((k, cds_aln) for k, cds_aln in self.cds_repository.items() if cds_aln.is_active())
-        
+
 
