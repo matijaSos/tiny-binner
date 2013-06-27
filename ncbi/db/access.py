@@ -13,6 +13,11 @@ table_gi_taxid_nuc = Table('gi_taxid_nuc', _metadata,
     Column('gi', Integer, primary_key=True),
     Column('tax_id', Integer),
 )
+table_ncbi_names = Table('ncbi_names', _metadata,
+    Column('tax_id', Integer),
+    Column('name_class', String(32)),
+    Column('name_txt', String(255))
+)
 
 class DbQuery(object):
 
@@ -108,6 +113,25 @@ class DbQuery(object):
                 return None
         finally:
             self.ncbitax_session.remove()
+
+    def get_organism_names(self, taxids, name_class='scientific name'):
+        if not taxids:
+            return format()
+        sess = self.ncbitax_session()
+        try:
+            s = select([table_ncbi_names.c.tax_id, table_ncbi_names.c.name_txt]
+                       ).where(table_ncbi_names.c.tax_id.in_(taxids)).\
+                        where(table_ncbi_names.c.name_class.is_(name_class))
+            records = sess.execute(s)
+
+            taxid2name = {}
+            for (taxid, name) in records:
+                taxid2name[taix] = name
+            return taxid2name
+        finally:
+            self.ncbitax_session.remove()
+
+
 
 
     def get_organism_name (self, taxid, name_class='scientific name'):
