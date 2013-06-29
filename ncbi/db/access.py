@@ -1,7 +1,7 @@
 from sqlalchemy.engine import create_engine
 from sqlalchemy.orm.scoping import scoped_session
 from sqlalchemy.orm.session import sessionmaker
-from sqlalchemy import Table, MetaData, Column, Integer
+from sqlalchemy import Table, MetaData, Column, Integer, String
 
 from ncbi.db.unity import UnityRecord, UnityCDS
 from sqlalchemy.sql.expression import select
