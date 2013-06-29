@@ -28,14 +28,17 @@ class SamParser(object):
                 self._process_reads(reads_to_process, sam_file, output_file)
                 reads_to_process = [readAlignment]
                 last_read_id = readAlignment.qname
-        self._process_reads(reads_to_process)
+        self._process_reads(reads_to_process, sam_file, output_file)
 
         output_file.close()
 
     def _process_reads(self, reads_to_process, sam_file, output_file):
-        read_id = freads_to_process[0].qname
-        read_str = '{0},{1};'.format(read_id, len(reads_to_process))
+        read_id = reads_to_process[0].qname
+        if len(reads_to_process) == 1 and reads_to_process[0].is_unmapped:
+            output_file.write('%s,0;\n' % (read_id))
+            return
 
+        read_str = '{0},{1};'.format(read_id, len(reads_to_process))
         for read in reads_to_process:
             assert (read_id == read.qname)
             read_str += self._format_str(read, sam_file)
