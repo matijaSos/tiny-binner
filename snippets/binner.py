@@ -13,7 +13,7 @@ from data.containers.read import ReadContainer
 from data.containers.record import RecordContainer
 from data.containers.cdsaln import CdsAlnContainer
 import filters.host as host_filter
-from filters.bin import bin as bin_reads
+from filters.readprocessing import annotate_reads
 from utils import timeit
 from utils.location import Location
 
@@ -116,18 +116,15 @@ def main():
     print 'done'
 
     print '6. Estimating organisms present in sample...'
-    target_taxids = [633, 632, 263, 543, 86661, 1392, 55080, 1386]
+    target_organisms = [633, 632, 263, 543, 86661, 1392, 55080, 1386]
     print 'done.'
    
-    print '7. Binning reads...' 
-    bin_reads(read_container.read_repository,
-              cds_aln_container.cds_repository,
-              cds_aln_container.read2cds,
-              tax_tree,
-              target_taxids,
-              None,
-              None,
-              True) 
+    print '7. Annotating reads...' 
+    annotate_reads(read_container.fetch_all_reads(format=list),
+                    cds_aln_container.read2cds_repository, 
+                    tax_tree, 
+                    target_organisms)
+    
     print 'done.'
 
 if __name__ == '__main__':

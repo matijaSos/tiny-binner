@@ -16,6 +16,9 @@ class Read (Autoslots):
         self.alignment_locations    = alignment_locations  # Jel ovo [ReadAlnLocation]? Treba iskomentirati!!!
         self.potential_host         = None
 
+    def set_status(self, status):
+        selt.status = status
+
 
     @staticmethod
     def from_read_str (read_str):

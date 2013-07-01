@@ -1,22 +1,4 @@
 import data.resultdata as resdata
-from utils import enum
-
-read2organism_binning_status = enum(
-                            NO_ALIGNMENT=0,
-                            ALIGNED_TO_ONE_TARGET_ORGANISM=1,
-                            ALIGNED_TO_MULTIPLE_TARGET_ORGANISMS=2,
-                            ALIGNED_TO_MULTIPLE_RELATED_TARGET_ORGANISMS=3,
-                            ALIGNED_TO_NONTARGET_ORGANISMS=4,
-                            PARENT_ALSO_PRESENT_IN_SOLUTION=5,
-                            CHILD_ORGANISM_ALSO_PRESENT_IN_SOLUTION=6
-                            )
-read2cds_alignment_status = enum(
-                            NO_ALIGNMENT=1,
-                            NO_ALIGNMENTS_TO_CODING_REGION=2,
-                            ONE_ALIGNMENT_TO_CODING_REGION=3,
-                            MULTIPLE_ALIGNMENTS_ONE_TO_CODING_REGION=4,
-                            MULTIPLE_ALIGNMENTS_ALL_TO_CODING_REGIONS=5
-                            )
 
 def bin (
          read_repository, 
