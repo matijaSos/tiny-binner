@@ -1,4 +1,5 @@
 import data.resultdata as resdata
+from utils import enum
 
 read2organism_binning_status = enum(
                             NO_ALIGNMENT=0,
@@ -54,7 +55,7 @@ def bin (
     #--- stage2: assign reads with only one alignment--#
     if output:
         print 'Stage 2: assigning reads with one alignment...'
-    one_alignment_reads = assign_zero_alignment_reads(read_repository, read2cds_repository, organisms, additional_organisms)
+    one_alignment_reads = assign_single_alignment_reads(read_repository, read2cds_repository, organisms, additional_organisms)
     processed_reads.extend(one_alignment_reads)
     if output:
         print 'done. [ONE_ALIGNMENT_READS: %d]' % num_assigned
@@ -86,8 +87,8 @@ def annotate_zero_alignment_reads (read_repository):
     :rtype dictionary (key: read_id, value: BinnedRead)
     '''
     zero_aln_reads = {}
-    for read in read_repository:
-        if len(read.get_alignments(format=list) == 0):
+    for read in read_repository.values():
+        if len(read.get_alignments(format=list)) == 0:
             binned_read = resdata.BinnedRead(read.id, 
                                              mapping_status=read2cds_alignment_status.NO_ALIGNMENT,
                                              binning_status=read2organism_binning_status.NO_ALIGNMENT
