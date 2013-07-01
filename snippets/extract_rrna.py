@@ -34,8 +34,6 @@ def log_start (log, args):
     log.info('BINNER RUN')
     log.info("Input: %s" % args.input)
 
-
-
 def main():
     '''
     Script to run binner in one of the most common
@@ -58,18 +56,22 @@ def main():
     #----------------------------------#
 
     #-------- TAXONOMY TREE -----------#
+    print '1. Loading tax tree...'
     tax_tree = TaxTree()
     # tax_tree.load_taxonomy_data(dataAccess)
-    #raw_input('Tax tree loaded.')
+    print 'done.'
 
     #----------------------------------#
     #------- ALIGNMENT DATA SOURCE ----#
+    print '2. Loading alignment file...'
     read_container = ReadContainer()
     read_container.load_alignment_data(args.input)
     #---SET TAXIDS FOR ALL ALIGNMENTS--#
     read_container.set_taxids(dataAccess)
+    print 'done'
 
     #------- FILTER HOST READS -------#
+    print '3. Filtering host reads & alignments...'
     new_reads = host_filter.filter_potential_host_reads(
         read_container.fetch_all_reads(format=list),
         tax_tree.tax2relevantTax,
@@ -81,21 +83,35 @@ def main():
         #unassigned_taxid=
         -1,
         host_filter.is_best_score_host)
-    read_container.set_new_reads(new_reads)
     dataAccess.clear_cache()    # deletes gi2taxid cache
+    reads_with_no_host_alignments = host_filter.filter_potential_hosts_alignments(
+        new_reads,
+        tax_tree.tax2relevantTax,
+        tax_tree.potential_hosts,
+        True,   # delete host alignments
+        True,   # filter unassigned
+        -1)     # unassigned taxid
+    read_container.set_new_reads(reads_with_no_host_alignments)
+    print 'done'
 
     #----------------------------------#
     #------- LOAD ALL RECORDS   -------#
+    print '4. Loading referenced records...'
     record_container = RecordContainer()
     record_container.set_db_access(dataAccess)
-    record_container.populate(read_container.fetch_all_reads_versions(), table='rrna')
+    record_container.populate(read_container.fetch_all_reads_versions(), table='cds')
+    print 'done'
     #----------------------------------#
     #-- MAP ALIGNMENTS TO GENES   -----#
+    print '5. Mapping alignments to genes...'
     read_container.populate_cdss(record_container)
     #----------------------------------#
     #- RECORD ALL ALIGNEMENTS TO GENE -#
     cds_aln_container = CdsAlnContainer()
     cds_aln_container.populate(read_container.fetch_all_reads(format=list))
+    print 'done'
+
+
 
     output_file = open(args.output, 'w')
 

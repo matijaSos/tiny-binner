@@ -25,6 +25,9 @@ class TestRunArgParser(DefaultBinnerArgParser):
         self.add_argument('input',
                 help='input alignment file',
                 type=str)
+        self.add_argument('output',
+                help='output file with rna information',
+                type=str)
 
 
 
@@ -49,14 +52,6 @@ def main():
     args  = argparser.parse_args()
 
     #----------------------------------#
-    #------- DATA LOGGING INIT --------#
-    log = logging.getLogger(__name__)
-    logging.config.fileConfig(args.log_configuration,
-                              disable_existing_loggers=False)
-    log_start(log, args)
-
-
-    #----------------------------------#
     #------- STATIC DATA SOURCE -------#
     # CDS - GI2TAXID -- NAMES -- NODES #
     dataAccess = DataAccess(args)
@@ -64,19 +59,22 @@ def main():
     #----------------------------------#
 
     #-------- TAXONOMY TREE -----------#
+    print '1. Loading tax tree...'
     tax_tree = TaxTree()
     # tax_tree.load_taxonomy_data(dataAccess)
-    #raw_input('Tax tree loaded.')
+    print 'done.'
 
     #----------------------------------#
     #------- ALIGNMENT DATA SOURCE ----#
+    print '2. Loading alignment file...'
     read_container = ReadContainer()
-    timeit(read_container.load_alignment_data, args.input)
-    #raw_input('Alignment file loaded')
-    print 'Number of PREFILTERED reads: ', len(read_container.fetch_all_reads(format=list))
-    timeit(read_container.set_taxids, dataAccess)
-    #raw_input('Data access set')
+    read_container.load_alignment_data(args.input)
+    #---SET TAXIDS FOR ALL ALIGNMENTS--#
+    read_container.set_taxids(dataAccess)
+    print 'done'
 
+    #------- FILTER HOST READS -------#
+    print '3. Filtering host reads & alignments...'
     new_reads = host_filter.filter_potential_host_reads(
         read_container.fetch_all_reads(format=list),
         tax_tree.tax2relevantTax,
@@ -88,47 +86,52 @@ def main():
         #unassigned_taxid=
         -1,
         host_filter.is_best_score_host)
+    dataAccess.clear_cache()    # deletes gi2taxid cache
+    reads_with_no_host_alignments = host_filter.filter_potential_hosts_alignments(
+        new_reads,
+        tax_tree.tax2relevantTax,
+        tax_tree.potential_hosts,
+        True,   # delete host alignments
+        True,   # filter unassigned
+        -1)     # unassigned taxid
+    read_container.set_new_reads(reads_with_no_host_alignments)
+    print 'done'
 
-    read_container.set_new_reads(new_reads)
-    #raw_input('Reads filtered.')
-    print 'Number of FILTERED reads: ', len(read_container.fetch_all_reads(format=list))
-    dataAccess.clear_cache()
-
+    #----------------------------------#
+    #------- LOAD ALL RECORDS   -------#
+    print '4. Loading referenced records...'
     record_container = RecordContainer()
     record_container.set_db_access(dataAccess)
-    record_container.populate(read_container.fetch_all_reads_versions(), table='rrna')
-    #raw_input('Records fetched')
-
+    record_container.populate(read_container.fetch_all_reads_versions(), table='cds')
+    print 'done'
+    #----------------------------------#
+    #-- MAP ALIGNMENTS TO GENES   -----#
+    print '5. Mapping alignments to genes...'
     read_container.populate_cdss(record_container)
-    #raw_input('Cdss populated. #read_container')
-
+    #----------------------------------#
+    #- RECORD ALL ALIGNEMENTS TO GENE -#
     cds_aln_container = CdsAlnContainer()
     cds_aln_container.populate(read_container.fetch_all_reads(format=list))
-    #raw_input('CdsALnContainer populated.')
+    print 'done'
 
-    for cds_aln in cds_aln_container.fetch_all_cds_alns():
-        output = cds_aln.cds.version + ','
-        if cds_aln.cds.gene is not None:
-            output += 'gene:%s,' % cds_aln.cds.gene
-        location = Location.from_location_str(cds_aln.cds.location)
-        if location.start is not None:
-            aln_loc = '(%d,%d)' % (location.start, location.end)
-        else:
-            aln_loc = ''
-            for subloc in location.sublocations:
-                aln_loc += '(%d,%d),' % (subloc.start, subloc.end)
-        output += '%s:' % aln_loc
-        for aln_subloc in cds_aln.aligned_regions.values():
-            if aln_subloc.location.start is None or aln_subloc.location.end is None:
-                aln_str = ''
-                for subloc in aln_subloc.location.sublocations:
-                    aln_str += '(%d,%d),' % (subloc.start, subloc.end)
-            else: aln_str = '(%d,%d)' % (aln_subloc.location.start, aln_subloc.location.end)
-            output += "%s,%.1f,%s;" % (aln_subloc.read_id, aln_subloc.score, aln_str)
-        print output
+    output_file = open(args.output, 'w')
+    for read in read_container.fetch_all_reads():
+        alignments = read.get_alignments(format=list)
+        if not alignments:
+            lca = -1
+        taxids = []
+        for aln in alignments:
+            taxids.append(aln.tax_id)
+        #lca = tax_tree.find_lca(taxids)
+        #print read.id, tax_tree.nodes[lca].organism_name
+        output_file.write('%s %d\n' % (read.id, len(alignments))) 
+    output_file.close()
 
-    log.info('BINNER EXIT')
-
+#    output_file = open(args.output, 'w')
+#    for read in read_container.fetch_all_reads():
+#        alignments = read.get_alignments(format=list)
+#        output_file.write('%s %d\n' % (read.id, len(alignments)))
+#    output_file.close()
 
 
 if __name__ == '__main__':
