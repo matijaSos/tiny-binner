@@ -13,6 +13,7 @@ from data.containers.read import ReadContainer
 from data.containers.record import RecordContainer
 from data.containers.cdsaln import CdsAlnContainer
 import filters.host as host_filter
+from filters.bin import bin as bin_reads
 from utils import timeit
 from utils.location import Location
 
@@ -114,25 +115,20 @@ def main():
     cds_aln_container.populate(read_container.fetch_all_reads(format=list))
     print 'done'
 
-    output_file = open(args.output, 'w')
-    for read in read_container.fetch_all_reads():
-        alignments = read.get_alignments(format=list)
-        if not alignments:
-            lca = -1
-        taxids = []
-        for aln in alignments:
-            taxids.append(aln.tax_id)
-        #lca = tax_tree.find_lca(taxids)
-        #print read.id, tax_tree.nodes[lca].organism_name
-        output_file.write('%s %d\n' % (read.id, len(alignments))) 
-    output_file.close()
-
-#    output_file = open(args.output, 'w')
-#    for read in read_container.fetch_all_reads():
-#        alignments = read.get_alignments(format=list)
-#        output_file.write('%s %d\n' % (read.id, len(alignments)))
-#    output_file.close()
-
+    print '6. Estimating organisms present in sample...'
+    target_taxids = [633, 632, 263, 543, 86661, 1392, 55080, 1386]
+    print 'done.'
+   
+    print '7. Binning reads...' 
+    bin_reads(read_container.read_repository,
+              cds_aln_container.cds_repository,
+              cds_aln_container.read2cds,
+              tax_tree,
+              target_taxids,
+              None,
+              None,
+              True) 
+    print 'done.'
 
 if __name__ == '__main__':
     main()
