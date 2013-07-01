@@ -1,5 +1,5 @@
 from  collections       import defaultdict
-import os,sys 
+import os,sys
 sys.path.append(os.getcwd())
 from utils.progressbar import print_progress
 
@@ -10,27 +10,33 @@ class TaxTree ():
         finding the least common ancestor.
     '''
 
-    def __init__ (self, nodes_file=None):
+    def __init__ (self, parent2child_fname=None, tax_nodes_fname=None):
         ''' Locates the ncbi taxonomy file and sets the important
             taxonomy assignments (such as animalia, bacteria ecc)
-            @param location of the ncbi taxonomy tree file
+
+            :param parent2child_fname location of the ncbi taxonomy tree file
+            :param tax_nodes_fname location of the file containing taxid,
+            organism name and organism rank for each taxid in the tree.
         '''
-        
-        if not nodes_file:
-            nodes_file = self._h_find_taxnode_file()
-        self.load(nodes_file) 
-        
+
+        if not parent2child_fname:
+            parent2child_fname = self._h_find_taxnode_file('parent2child')
+        self.load(parent2child_fname)
+        if not tax_nodes_fname:
+            tax_nodes_fname = self._h_find_taxnode_file('taxdata')
+        self.load_taxonomy_data(tax_nodes_fname)
+
         #--------- RELEVANT TAXONOMY ASSIGNMENTS ----------#
-        self._h_set_relevant_taxonomy_assignments()   
+        self._h_set_relevant_taxonomy_assignments()
         self._h_map_taxids_to_relevant_tax_nodes()
 
-    def load (self, nodes_file):
-        self.parent_nodes   = self._h_get_tax_nodes(nodes_file)
+    def load (self, parent2child_fname):
+        self.parent_nodes   = self._h_get_tax_nodes(parent2child_fname)
         self.child_nodes    = self._h_populate_child_nodes()
 
-    def load_taxonomy_data(self, data_access):
+    def load_taxonomy_data(self, tax_nodes_fname):
         '''
-        Uses data access object to find organism name and 
+        Uses data access object to find organism name and
         rank of each of the tax IDs.
         For each tax ID creates a node of type TaxNode
         After invoking this method, there is nodes parameter
@@ -39,25 +45,26 @@ class TaxTree ():
         self.nodes = {}
         total = len(self.parent_nodes)
         current = 0
-        for tax_id in self.parent_nodes.keys():
-            org_name = data_access.get_organism_name(tax_id)
-            rank = data_access.get_organism_rank(tax_id)
-            tax_node = TaxNode(org_name, rank)
-            self.nodes[tax_id] = tax_node
-            print_progress(current, total)
-            current += 1
+        tax_nodes_file = open(tax_nodes_fname, 'r')
+        readline = tax_nodes_file.readline
+        while (True):
+            line = readline()
+            if not line: break
+            (taxid, org_name, rank) = line.strip().split('|')
+            node = TaxNode(org_name, rank)
+            self.nodes[int(taxid)] = node
+        tax_nodes_file.close()
 
-    
     def is_child (self, child_taxid, parent_taxid):
         ''' Test if child_taxid is child node of parent_taxid
             Node is not the child of itself
-        '''  
+        '''
         # check boundary conditions
         if child_taxid == parent_taxid:
             return False
         if parent_taxid == self.root:
             return True
-        
+
         tmp_parent_taxid = child_taxid
         while True:
             if not self.parent_nodes.has_key(tmp_parent_taxid):
@@ -67,12 +74,12 @@ class TaxTree ():
                 return False
             if tmp_parent_taxid == parent_taxid:
                 return True
-            
+
     def find_lca (self, taxid_list):
         ''' Finds the lowest common ancestor of
             a list of nodes
         '''
-        # each of the visited nodes remembers how many 
+        # each of the visited nodes remembers how many
         # child nodes traversed it
         self.num_visited        = defaultdict(int)
 
@@ -99,8 +106,8 @@ class TaxTree ():
 
                 self.num_visited[taxid]     += 1
                 if self.num_visited[taxid] == num_of_nodes:
-                    
-                    self.lca_root = taxid 
+
+                    self.lca_root = taxid
                     return taxid
             # refresh current nodes
             current_taxids = parent_nodes
@@ -110,34 +117,42 @@ class TaxTree ():
         return self.tax2relevantTax.get(tax_id, -1)
 
 
-    def _h_get_tax_nodes        (self, nodes_file):
+    def _h_get_tax_nodes        (self, parent2child_fname):
         '''Loads the taxonomy nodes in a dictionary
            mapping the child to parent node.
         '''
         # file format per line: child_taxid parent_taxid
-        with open(nodes_file) as fd:    
+        with open(parent2child_fname) as fd:
             d = dict(self._h_from_parent_child_str (line) for line in fd)
         return d
-    
+
     def _h_from_parent_child_str (self, line):
         '''Loads two integers (taxids) from a line
         '''
         key, sep, value = line.strip().partition(" ")
         if key == value: self.root = int(key)
         return int(key), int(value)
-    
 
-    def _h_find_taxnode_file(self):
+
+    def _h_find_taxnode_file(self, file_type):
         ''' Searches recursively through the current
             working directory to find the ncbi_tax_tree file.
         '''
-        for root, dirs, files in os.walk (os.getcwd()):
-            if 'ncbi_tax_tree' in files:
-                return root + ''.join(dirs) + '/ncbi_tax_tree'
-            
+        if file_type == 'parent2child':
+            for root, dirs, files in os.walk (os.getcwd()):
+                if 'ncbi_tax_tree' in files:
+                    return root + ''.join(dirs) + '/ncbi_tax_tree'
+        elif file_type == 'taxdata':
+            for root, dirs, files in os.walk (os.getcwd()):
+                if 'taxid2namerank' in files:
+                    return root + ''.join(dirs) + '/taxid2namerank'
+        else:
+            raise ValueError('Internal error: looking for %s file type failed. No such file type supported.' % file_type)
+
+
 
     def _h_populate_child_nodes (self):
-        ''' Populates child nodes from parent to child 
+        ''' Populates child nodes from parent to child
             mapping dictionary
         '''
         child_nodes = defaultdict(list)
@@ -146,7 +161,7 @@ class TaxTree ():
         return child_nodes
 
     def _h_set_relevant_taxonomy_assignments (self):
-        ''' Sets some of the more important taxonomy 
+        ''' Sets some of the more important taxonomy
             assignments which can help in checking which kingdom
             an organism belongs to.
         '''
@@ -185,7 +200,7 @@ class TaxTree ():
         host_nodes = list(self.potential_hosts)
         microbe_nodes = list(self.microbes)
 
-        self.tax2relevantTax = {}       
+        self.tax2relevantTax = {}
         for microbe_node in self.microbes:
             microbe_children = self._h_list_all_children(microbe_node)
             for child in microbe_children:
@@ -222,7 +237,7 @@ class TaxTree ():
 
 class TaxNode (object):
     '''
-    Taxonomy nodes hold information on relevant 
+    Taxonomy nodes hold information on relevant
     taxonomy data, which are:
     * organism name (scientific)
     * taxonomy rank
@@ -238,5 +253,5 @@ class TaxNode (object):
     def __str__ (self):
         return "Org name: %s\nRank:     %s\n" % ( self.organism_name, self.rank)
 
-        
+
 
