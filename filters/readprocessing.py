@@ -110,7 +110,7 @@ def is_mapped_to_coding_regions_of_mixed_organisms(status):
 
 def is_mapped_only_to_coding_region_of_single_target_organism(status):
     if is_mapped_to_single_coding_region(status)\
-    ... and is_mapped_to_coding_regions_of_single_target_organism(status):
+    and is_mapped_to_coding_regions_of_single_target_organism(status):
         return True
     return False
 

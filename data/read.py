@@ -17,7 +17,7 @@ class Read (Autoslots):
         self.potential_host         = None
 
     def set_status(self, status):
-        selt.status = status
+        self.status = status
 
 
     @staticmethod
