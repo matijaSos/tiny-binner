@@ -15,8 +15,8 @@ organism_count_status = enum  (                             #0b000000xx00
                               )
 organism_type_status  = enum  (                             #0b0000xx0000
                                 TARGET_ORGANISM             =0b0000001000,
-                                NON_TARGET_ORGANISM         =0b0000010000,
-                                MIXED                       =0b0000011000,
+                                NONTARGET_ORGANISM          =0b0000010000,
+                                MIXED_ORGANISMS             =0b0000011000,
                                 MASK                        =0b0000011000
                               )
 coding_region_aln_count_status = enum (                     #0b00xx000000
@@ -32,6 +32,88 @@ coding_region_alignment_status = enum (                     #0bxx00000000
                                 MIXED_ORGANISMS             =0b1100000000,
                                 MASK                        =0b1100000000
                               )
+
+def is_zero_alignment_read(status):
+    if status & alignment_count_status.MASK == alignment_count_status.NO_ALIGNMENT:
+        return True
+    return False
+
+def is_single_alignment_read(status):
+    if status & alignment_count_status.MASK == alignment_count_status.ONE_ALIGNMENT:
+        return True
+    return False
+
+def is_multiple_alignment_read(status):
+    if status & alignment_count_status.MASK == alignment_count_status.MULTIPLE_ALIGNMENTS:
+        return True
+    return False
+
+def is_mapped_to_single_organism(status):
+    if status & organism_count_status.MASK == organism_count_status.ONE_ORGANISM:
+        return True
+    return False
+
+def is_mapped_to_multiple_organisms(status):
+    if status & organism_count_status.MASK == organism_count_status.MULTIPLE_ORGANISMS:
+        return True
+    return False
+
+def is_mapped_to_target_organisms(status):
+    if status & organism_type_status.MASK == organism_type_status.TARGET_ORGANISM:
+        return True
+    return False
+
+def is_mapped_to_nontarget_organisms(status):
+    if status & organism_type_status.MASK == organism_type_status.NONTARGET_ORGANISM:
+        return True
+    return False
+
+def is_mapped_to_mixed_organisms(status):
+    if status & organism_type_status.MASK == organism_type_status.MIXED_ORGANISMS:
+        return True
+    return False
+
+def is_not_mapped_to_coding_region(status):
+    if status & coding_region_aln_count_status.MASK == coding_region_aln_count_status.NO_CODING_ALIGNMENTS:
+        return True
+    return False
+
+def is_mapped_to_single_coding_region(status):
+    if status & coding_region_aln_count_status.MASK == coding_region_aln_count_status.ONE_CODING_ALIGNMENT:
+        return True
+    return False    
+
+def is_mapped_to_multiple_coding_regions(status):
+    if status & coding_region_aln_count_status.MASK == coding_region_aln_count_status.MULTIPLE_CODING_ALIGNMENTS:
+        return True
+    return False
+
+def is_mapped_to_coding_region_of_nontarget_organisms(status):
+    if status & coding_region_alignment_status.MASK == coding_region_alignment_status.NONTARGET_ORGANISMS:
+        return True
+    return False
+
+def is_mapped_to_coding_regions_of_single_target_organism(status):
+    if status & coding_region_alignment_status.MASK == coding_region_alignment_status.ONE_TARGET_ORGANIMS:
+        return True
+    return False    
+
+def is_mapped_to_coding_regions_of_multiple_target_organisms(status):
+    if status & coding_region_alignment_status.MASK == coding_region_alignment_status.MULTIPLE_TARGET_ORGANISMS:
+        return True
+    return False
+
+def is_mapped_to_coding_regions_of_mixed_organisms(status):
+    if status & coding_region_alignment_status.MASK == coding_region_alignment_status.MIXED_ORGANISMS:
+        return True
+    return False
+
+def is_mapped_only_to_coding_region_of_single_target_organism(status):
+    if is_mapped_to_single_coding_region(status)\
+    ... and is_mapped_to_coding_regions_of_single_target_organism(status):
+        return True
+    return False
+
 
 def annotate_reads(all_nonhost_reads,read2cds_repository, tax_tree, target_organisms):
     '''
@@ -72,7 +154,7 @@ def mark_single_alignment_read(read, read2cds_repository, tax_tree, target_organ
     if mapped_to_target:
         org_type = organism_type_status.TARGET_ORGANISM
     else:
-        org_type = organism_type_status.NON_TARGET_ORGANISM
+        org_type = organism_type_status.NONTARGET_ORGANISM 
     # coding region alignment count status
     if not read2cds_repository.has_key(read.id):
         cds_aln_count = coding_region_aln_count_status.NO_CODING_ALIGNMENTS
@@ -104,9 +186,9 @@ def mark_multiple_alignment_read(read, read2cds_repository, tax_tree, target_org
     if children_count == len(alignments):
         org_type = organism_type_status.TARGET_ORGANISM
     elif children_count == 0:
-        org_type = organism_type_status.NON_TARGET_ORGANISM
+        org_type = organism_type_status.NONTARGET_ORGANISM 
     else:
-        org_type = organism_type_status.MIXED
+        org_type = organism_type_status.MIXED_ORGANISMS
     # coding region alignment type
     cds_aln_type = 0
     if not read2cds_repository.has_key(read.id):
