@@ -13,7 +13,7 @@ from data.containers.read import ReadContainer
 from data.containers.record import RecordContainer
 from data.containers.cdsaln import CdsAlnContainer
 import filters.host as host_filter
-from filters.readprocessing import annotate_reads
+from filters.readprocessing import annotate_reads, is_not_mapped_to_coding_region
 from utils import timeit
 from utils.location import Location
 
@@ -124,6 +124,17 @@ def main():
                     cds_aln_container.read2cds_repository, 
                     tax_tree, 
                     target_organisms)
+
+    no_coding_aln = 0
+    total_reads = 0
+    for read in read_container.fetch_all_reads():
+        if is_not_mapped_to_coding_region(read.status):
+            no_coding_aln += 1
+        total_reads += 1
+
+    print 'Total reads: ', total_reads
+    print 'No cds aln:  ', no_coding_aln
+
     
     print 'done.'
 
