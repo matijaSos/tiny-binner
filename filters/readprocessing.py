@@ -182,7 +182,7 @@ def mark_multiple_alignment_read(read, read2cds_repository, tax_tree, target_org
     else:
         org_count = organism_count_status.MULTIPLE_ORGANISMS
     # organism type 
-    children_count = get_child_count(organisms, target_organisms, tax_tree)
+    (children_count, parent_count) = get_child_count(organisms, target_organisms, tax_tree)
     if children_count == len(alignments):
         org_type = organism_type_status.TARGET_ORGANISM
     elif children_count == 0:
@@ -203,9 +203,9 @@ def mark_multiple_alignment_read(read, read2cds_repository, tax_tree, target_org
         coding_alns_tax_ids = set()
         for cds in cdss:
             coding_alns_tax_ids.add(cds.cds.taxon)
-        children_count = get_child_count(coding_alns_tax_ids, target_organisms, tax_tree)
+        (children_count, parent_count) = get_child_count(coding_alns_tax_ids, target_organisms, tax_tree)
         if children_count == len(coding_alns_tax_ids):
-            if children_count == 1:
+            if parent_count == 1:
                 cds_aln_type = coding_region_alignment_status.ONE_TARGET_ORGANISM
             else:
                 cds_aln_type = coding_region_alignment_status.MULTIPLE_TARGET_ORGANISMS
@@ -220,13 +220,15 @@ def mark_multiple_alignment_read(read, read2cds_repository, tax_tree, target_org
 
 
 def get_child_count(tax_ids, target_organisms, tax_tree):
-    children = 0
+    children_count = 0
+    parent_taxids = set()
     for tax_id in tax_ids:
         child = False
         for target_taxid in target_organisms:
             if tax_tree.is_child(tax_id, target_taxid):
                 child = True
+                parent_taxids.add(target_taxid)
                 break
         if child:
-            children += 1
-    return children
+            children_count += 1
+    return children_count, len(parent_taxids)
