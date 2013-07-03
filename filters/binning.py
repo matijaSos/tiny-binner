@@ -3,8 +3,8 @@ import filters.readprocessing as rstate
 from ncbi.taxonomy.ranks import ranks as tax_ranks
 from utils.location import Location
 
-def bin (
-         read_repository, 
+def bin_reads (
+         reads, 
          cds_repository, 
          read2cds_repository, 
          tax_tree, 
@@ -14,7 +14,7 @@ def bin (
          output=True
          ):
     '''
-    :param read_repository dictionary (key: read_id, value: Read object)
+    :param reads list of Read objects
     :param cds_repository dictionary (key: UnityCds, value: CdsAlignment)
     :param read2cds_repository dictionary (key: read_id, value: [CdsAlignment])
     :param tax_tree TaxTree object
@@ -26,16 +26,25 @@ def bin (
     '''
     organisms = _create_organisms(target_organism_taxids, tax_tree)
 
-    for read in read_repository.values():
+    for read in reads:
+        print bin(read.status)
+        for aln in read.get_alignments():
+            print aln.tax_id,
+        print 
+        print 'zero aln read:', rstate.is_zero_alignment_read(read.status)
+        print 'n aln read:   ', rstate.is_multiple_alignment_read(read.status)
+        print 'target orgs:  ', rstate.is_mapped_to_target_organisms(read.status)
+        print 'mixd orgs:    ', rstate.is_mapped_to_mixed_organisms(read.status)
 
     # STEP 0:
     #           | target | nontarget |
     #    coding |   0    |     X     |
     # noncoding |   0    |     X     |
-        if rstate.is_zero_alignment_read(read.state)\
-        or rstate.is_mapped_to_nontarget_organisms(read.state):
+        if rstate.is_zero_alignment_read(read.status)\
+        or rstate.is_mapped_to_nontarget_organisms(read.status):
             # maybe write down additional organisms
             # skip this one
+            print '\tApplying step (1).'
             continue
 
     # STEP 1:
@@ -45,6 +54,8 @@ def bin (
         elif not rstate.is_single_alignment_read(read.status)\
         and  rstate.is_mapped_to_single_coding_region(read.status)\
         and  rstate.is_mapped_to_coding_regions_of_single_target_organism(read.status):
+            
+            print '\tApplying step (2).'
             # add gene to organism
             # add read to organism
             target_alignment = read.get_alignments(format=list)[0]
@@ -61,6 +72,8 @@ def bin (
     # noncoding |   X    |     X     |
         elif rstate.is_mapped_to_coding_regions_of_multiple_target_organisms(read.status)\
         or   rstate.is_mapped_to_coding_regions_of_mixed_organisms(read.status):
+            
+            print '\tApplying step (3).'
             # if organisms are related, assign to lowest
             # if not, assign to best score
             # add read to organism
@@ -81,11 +94,18 @@ def bin (
     #           | target | nontarget |
     #    coding |   0    |     0     |
     # noncoding |   1+   |     X     |
-        elif   rstate.is_not_mapped_to_coding_region(read.state)\
-        and (rstate.is_mapped_to_target_organisms(read.state)\
-            or rstate.is_mapped_to_mixed_organisms(read.state)):
+        elif   rstate.is_not_mapped_to_coding_region(read.status)\
+        and (rstate.is_mapped_to_target_organisms(read.status)\
+            or rstate.is_mapped_to_mixed_organisms(read.status)):
             # assign to best score
             # add read to organism
+
+            print '\tApplying step (4).'
+            cds_num = 0
+            for aln in read.get_alignments(format=list):
+                cds_num += len(aln.aligned_cdss)
+            print cds_num
+
             target_alignments = extract_noncoding_target_alignments(
                 read.get_alignments(format=list),
                 read2cds_repository,
@@ -100,6 +120,7 @@ def bin (
 
         else:
             print read.id, read.status
+        print
     return organisms
 
 def _create_organisms(target_organism_taxids, tax_tree):
@@ -155,6 +176,7 @@ def add_cds_to_organism(organism, read, target_alignment):
 
 
 def find_best_alignment(target_alignments):
+    print 'Target alns:', len(target_alignments)
     sorted_alignments = sorted(target_alignments, key = lambda aln: aln.score)
     return sorted_alignments[-1]
 
@@ -186,16 +208,15 @@ def extract_noncoding_target_alignments(
                 tax_tree):
     noncoding_target_alignments = []
     for alignment in read_alignments:
+        print alignment.tax_id
         is_target = False
-        if len(alignment.aligned_cdss) != 0:
-            continue
+        if alignment.tax_id in target_organism_taxids:
+            is_target = True
         else:
-            if alignment.tax_id in target_organism_taxids:
-                is_target = True
-            else:
-                for tax_id in target_organism_taxids:
-                    if tax_tree.is_child(alignment.tax_id, tax_id):
-                        is_target = True
+            for tax_id in target_organism_taxids:
+                if tax_tree.is_child(alignment.tax_id, tax_id):
+                    is_target = True
         if is_target:
+            print is_target
             noncoding_target_alignments.append(alignment)
     return noncoding_target_alignments
