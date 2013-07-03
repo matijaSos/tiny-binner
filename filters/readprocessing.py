@@ -14,10 +14,10 @@ organism_count_status = enum  (                             #0b000000xx00
                                 MASK                        =0b0000001100
                               )
 organism_type_status  = enum  (                             #0b0000xx0000
-                                TARGET_ORGANISM             =0b0000001000,
-                                NONTARGET_ORGANISM          =0b0000010000,
-                                MIXED_ORGANISMS             =0b0000011000,
-                                MASK                        =0b0000011000
+                                TARGET_ORGANISM             =0b0000010000,
+                                NONTARGET_ORGANISM          =0b0000100000,
+                                MIXED_ORGANISMS             =0b0000110000,
+                                MASK                        =0b0000110000
                               )
 coding_region_aln_count_status = enum (                     #0b00xx000000
                                 NO_CODING_ALIGNMENTS        =0b0000000000,
@@ -94,7 +94,7 @@ def is_mapped_to_coding_region_of_nontarget_organisms(status):
     return False
 
 def is_mapped_to_coding_regions_of_single_target_organism(status):
-    if status & coding_region_alignment_status.MASK == coding_region_alignment_status.ONE_TARGET_ORGANIMS:
+    if status & coding_region_alignment_status.MASK == coding_region_alignment_status.ONE_TARGET_ORGANISM:
         return True
     return False    
 
@@ -134,6 +134,7 @@ def annotate_reads(all_nonhost_reads,read2cds_repository, tax_tree, target_organ
             mark_single_alignment_read(read, read2cds_repository, tax_tree, target_organisms)
         else:
             mark_multiple_alignment_read(read, read2cds_repository, tax_tree, target_organisms)
+    return all_nonhost_reads
 
 def mark_zero_alignment_read(read):
     status = alignment_count_status.NO_ALIGNMENT
@@ -181,9 +182,9 @@ def mark_multiple_alignment_read(read, read2cds_repository, tax_tree, target_org
         org_count = organism_count_status.ONE_ORGANISM
     else:
         org_count = organism_count_status.MULTIPLE_ORGANISMS
-    # organism type 
+    # organism type
     (children_count, parent_count) = get_child_count(organisms, target_organisms, tax_tree)
-    if children_count == len(alignments):
+    if children_count == len(organisms):
         org_type = organism_type_status.TARGET_ORGANISM
     elif children_count == 0:
         org_type = organism_type_status.NONTARGET_ORGANISM 
@@ -224,6 +225,8 @@ def get_child_count(tax_ids, target_organisms, tax_tree):
     parent_taxids = set()
     for tax_id in tax_ids:
         child = False
+        if tax_id in target_organisms:
+            child = True
         for target_taxid in target_organisms:
             if tax_tree.is_child(tax_id, target_taxid):
                 child = True
