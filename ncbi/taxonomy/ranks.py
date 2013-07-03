@@ -1,29 +1,29 @@
-ranks = [
-"superkingdom"
-"kingdom"
-"subkingdom"
-"superphylum"
-"phylum"
-"subphylum"
-"superclass"
-"class"
-"subclass"
-"infraclass"
-"superorder"
-"order"
-"suborder"
-"infraorder"
-"parvorder"
-"superfamily"
-"family"
-"subfamily"
-"tribe"
-"subtribe"
-"genus"
-"subgenus"
-"species"
-"species group"
-"subspecies"
-"species subgroup"
-"varietas"
-"forma"]
+ranks = { 'superkingdom'        : 0, 
+          'kingdom'             : 1,
+          'subkingdom'          : 2,
+          'superphylum'         : 3,
+          'phylum'              : 4,
+          'subphylum'           : 5,
+          'superclass'          : 6,
+          'class'               : 7,
+          'subclass'            : 8,
+          'infraclass'          : 9,
+          'superorder'          : 10,
+          'order'               : 11,
+          'suborder'            : 12,
+          'infraorder'          : 13,
+          'parvorder'           : 14,
+          'superfamily'         : 15,
+          'family'              : 16,
+          'subfamily'           : 17,
+          'tribe'               : 18,
+          'subtribe'            : 19,
+          'genus'               : 20,
+          'subgenus'            : 21,
+          'species group'       : 22,
+          'species subgroup'    : 23,
+          'species'             : 24,
+          'subspecies'          : 25,
+          'varietas'            : 26,
+          'forma'               : 27,
+          'no rank'             : 28 }
