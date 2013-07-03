@@ -29,23 +29,36 @@ class Organism (object):
         self.tax_id = tax_id
         self.name = name
         self.rank = rank
-        self.identified_coding_regions = []
+        self.identified_coding_regions = {}
         self.reads_aligned_to_noncoding_regions = []
         self.reads_aligned_to_coding_regions = []
         self.ambiguous_organism_binning_reads = []
         self.ambiguous_coding_region_mapping_reads = []
+
     def add_identified_coding_region(self, identified_cds):
-        self.identified_coding_regions.append(cds)
-        self.reads_aligned_to_coding_regions.extend(cds.binned_reads)
+        self.identified_coding_regions[identified_cds.cds] = identified_cds
+        self.reads_aligned_to_coding_regions.extend(identified_cds.binned_reads)
+
     def add_read_aligned_to_noncoding_region(self, binned_read):
         self.reads_aligned_to_noncoding_regions.append(binned_read)
+
     def set_reads_aligned_to_noncoding_region(self, binned_reads):
         self.reads_aligned_to_noncoding_regions = binned_reads
+
     def add_ambiguous_organism_read(self, binned_read):
         self.ambiguous_organism_binning_reads.append(binned_read)
+
     def set_ambiguous_organism_reads(self, binned_reads):
         self.ambiguous_organism_binning_reads = binned_reads
+
     def add_ambiguous_coding_region_mapped_read(self, binned_read):
         self.ambiguous_coding_region_mapping_reads.append(binned_read)
+
     def set_ambiguous_coding_region_mapped_reads(self, binned_reads):
         self.ambiguous_coding_region_mapping_reads = binned_reads
+
+    def contains_identified_coding_region(self, cds):
+        if self.identified_coding_regions.has_key(cds):
+            return True
+        else:
+            return False
