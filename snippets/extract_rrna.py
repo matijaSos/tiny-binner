@@ -118,8 +118,6 @@ def main():
 
     for cds_aln in cds_aln_container.fetch_all_cds_alns():
         output = cds_aln.cds.version + ','
-        if cds_aln.cds.gene is not None:
-            output += 'gene:%s,' % cds_aln.cds.gene
         location = Location.from_location_str(cds_aln.cds.location)
         if location.start is not None:
             aln_loc = '(%d,%d)' % (location.start, location.end)
