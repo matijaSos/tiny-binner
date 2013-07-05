@@ -100,6 +100,7 @@ def main():
     record_container = RecordContainer()
     record_container.set_db_access(dataAccess)
     record_container.populate(read_container.fetch_all_reads_versions(), table='cds')
+    record_container.populate(read_container.fetch_all_reads_versions(), table='rrna')
     print 'done'
     #----------------------------------#
     #-- MAP ALIGNMENTS TO GENES   -----#
