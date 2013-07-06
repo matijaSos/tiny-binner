@@ -13,7 +13,8 @@ from data.containers.read import ReadContainer
 from data.containers.record import RecordContainer
 from data.containers.cdsaln import CdsAlnContainer
 import filters.host as host_filter
-from filters.readprocessing import annotate_reads, is_not_mapped_to_coding_region
+import filters.readprocessing as rstate
+from filters.binning import bin_reads
 from utils import timeit
 from utils.location import Location
 
@@ -120,22 +121,41 @@ def main():
     print 'done.'
    
     print '7. Annotating reads...' 
-    annotate_reads(read_container.fetch_all_reads(format=list),
-                    cds_aln_container.read2cds_repository, 
+    annotated_reads = rstate.annotate_reads(
+                    read_container.fetch_all_reads(format=list),
+                    cds_aln_container.read2cds, 
                     tax_tree, 
                     target_organisms)
+    read_container.set_new_reads(annotated_reads)
+    print 'done'
+   
+    print '8. Binning reads...' 
+    orgs = bin_reads(
+        read_container.fetch_all_reads(format=list),
+        cds_aln_container.cds_repository,
+        cds_aln_container.read2cds, 
+        tax_tree,
+        target_organisms,
+        None,
+        None,
+        False) 
+    for org in orgs.values():
+        print org.name
+        print len(set(org.get_reads()))
+        print len(org.identified_coding_regions)
+    #removable_reads = 0
+    #total_reads = 0
+    #output = open(args.output, 'w')
+    #for read in read_container.fetch_all_reads():
+    #    if rstate.is_zero_alignment_read(read.status):
+    #        continue
+    #    if rstate.is_mapped_to_nontarget_organisms(read.status):
+    #        continue
+    #    if rstate.is_not_mapped_to_coding_region(read.status):
+    #        continue
+    #    output.write('%s\n' % read.id)
 
-    no_coding_aln = 0
-    total_reads = 0
-    for read in read_container.fetch_all_reads():
-        if is_not_mapped_to_coding_region(read.status):
-            no_coding_aln += 1
-        total_reads += 1
-
-    print 'Total reads: ', total_reads
-    print 'No cds aln:  ', no_coding_aln
-
-    
+    #output.close()
     print 'done.'
 
 if __name__ == '__main__':
