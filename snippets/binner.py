@@ -4,6 +4,7 @@ import logging
 import logging.config
 import argparse
 import sys,os
+import operator
 sys.path.append(os.getcwd())
 
 from utils.argparser import DefaultBinnerArgParser
@@ -17,6 +18,7 @@ import filters.readprocessing as rstate
 from filters.binning import bin_reads
 from utils import timeit
 from utils.location import Location
+from formats.xml_output import *
 
 class TestRunArgParser(DefaultBinnerArgParser):
     def __init__(self):
@@ -27,8 +29,11 @@ class TestRunArgParser(DefaultBinnerArgParser):
         self.add_argument('input',
                 help='input alignment file',
                 type=str)
+        self.add_argument('xml_description_file',
+                help='xml description file provided by Innocentive',
+                type=str)
         self.add_argument('output',
-                help='output file with rna information',
+                help='XML output',
                 type=str)
 
 
@@ -96,6 +101,7 @@ def main():
         True,   # delete host alignments
         True,   # filter unassigned
         -1)     # unassigned taxid
+    host_read_count = len(read_container.fetch_all_reads(format=list)) - len(reads_with_no_host_alignments)
     read_container.set_new_reads(reads_with_no_host_alignments)
     print 'done'
 
@@ -143,20 +149,19 @@ def main():
         print org.name
         print len(set(org.get_reads()))
         print len(org.identified_coding_regions)
-    #removable_reads = 0
-    #total_reads = 0
-    #output = open(args.output, 'w')
-    #for read in read_container.fetch_all_reads():
-    #    if rstate.is_zero_alignment_read(read.status):
-    #        continue
-    #    if rstate.is_mapped_to_nontarget_organisms(read.status):
-    #        continue
-    #    if rstate.is_not_mapped_to_coding_region(read.status):
-    #        continue
-    #    output.write('%s\n' % read.id)
-
-    #output.close()
     print 'done.'
+
+    print '9. Generating XML...'
+    dataset = Dataset(args.xml_description_file)
+    xml_organisms = []
+    host = Organism (host_read_count, host_read_count, None, None, "Host",
+                 None, None, [], [], [], is_host=True)
+    xml_organisms.append(host)
+    for org in orgs:
+        xml_organisms.append(org.to_xml_organism())
+    xml_organism.sort(key=operator.attrgetter("amount_count"), reverse=True)
+    xml = XMLOutput(dataset, xml_organisms, args.output) 
+    xml.xml_output();
 
 if __name__ == '__main__':
     main()
