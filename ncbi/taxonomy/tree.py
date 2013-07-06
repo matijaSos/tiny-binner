@@ -267,8 +267,6 @@ class TaxNode (object):
         self.rank = rank
         self.score = score
 
-    def __str__ (self):
-        return "Org name: %s\nRank:     %s\n" % ( self.organism_name, self.rank)
 
 
 
