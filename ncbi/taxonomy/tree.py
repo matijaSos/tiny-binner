@@ -116,6 +116,23 @@ class TaxTree ():
     def get_relevant_taxid (self, tax_id):
         return self.tax2relevantTax.get(tax_id, -1)
 
+    def get_lineage(self,tax_id):
+        lineage = []
+        while (True):
+            if tax_id == self.root:
+                break
+            lineage.append(tax_id)
+            tax_id = self.parent_nodes[tax_id]
+        return reversed(lineage)
+
+    def get_parent_with_rank(self, tax_id, rank):
+        parent = 0
+        while (True):
+            if tax_id == self.root:
+                return 0
+            if self.nodes[tax_id].rank == rank:
+                return tax_id
+            tax_id = self.parent_nodes[tax_id]
 
     def _h_get_tax_nodes        (self, parent2child_fname):
         '''Loads the taxonomy nodes in a dictionary
