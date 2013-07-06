@@ -92,7 +92,7 @@ def main():
         True,
         #unassigned_taxid=
         -1,
-        host_filter.is_best_score_host)
+        host_filter.perc_of_host_alignments_larger_than)
     dataAccess.clear_cache()    # deletes gi2taxid cache
     reads_with_no_host_alignments = host_filter.filter_potential_hosts_alignments(
         new_reads,
@@ -157,9 +157,9 @@ def main():
     host = Organism (host_read_count, host_read_count, None, None, "Host",
                  None, None, [], [], [], is_host=True)
     xml_organisms.append(host)
-    for org in orgs:
-        xml_organisms.append(org.to_xml_organism())
-    xml_organism.sort(key=operator.attrgetter("amount_count"), reverse=True)
+    for org in orgs.values():
+        xml_organisms.append(org.to_xml_organism(tax_tree))
+    xml_organisms.sort(key=operator.attrgetter("amount_count"), reverse=True)
     xml = XMLOutput(dataset, xml_organisms, args.output) 
     xml.xml_output();
 
