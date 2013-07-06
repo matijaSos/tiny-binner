@@ -30,9 +30,6 @@ class TestRunArgParser(DefaultBinnerArgParser):
 
 
 
-def log_start (log, args):
-    log.info('BINNER RUN')
-    log.info("Input: %s" % args.input)
 
 def main():
     '''
@@ -126,6 +123,8 @@ def main():
             for subloc in location.sublocations:
                 aln_loc += '(%d,%d),' % (subloc.start, subloc.end)
         output += '%s:' % aln_loc
+        if len(cds_aln.aligned_regions) == 0:
+            continue
         for aln_subloc in cds_aln.aligned_regions.values():
             if aln_subloc.location.start is None or aln_subloc.location.end is None:
                 aln_str = ''
@@ -136,7 +135,6 @@ def main():
         output_file.write('%s\n' % output)
 
     output_file.close()
-    log.info('BINNER EXIT')
 
 
 
