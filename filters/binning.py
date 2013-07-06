@@ -32,6 +32,7 @@ def bin_reads (
             print aln.tax_id,
         print 
         print 'zero aln read:', rstate.is_zero_alignment_read(read.status)
+        print 'one aln read: ', rstate.is_single_alignment_read(read.status)
         print 'n aln read:   ', rstate.is_multiple_alignment_read(read.status)
         print 'target orgs:  ', rstate.is_mapped_to_target_organisms(read.status)
         print 'mixd orgs:    ', rstate.is_mapped_to_mixed_organisms(read.status)
@@ -51,7 +52,7 @@ def bin_reads (
     #           | target | nontarget |
     #    coding |   1    |     0     |
     # noncoding |   0    |     0     |
-        elif not rstate.is_single_alignment_read(read.status)\
+        elif rstate.is_single_alignment_read(read.status)\
         and  rstate.is_mapped_to_single_coding_region(read.status)\
         and  rstate.is_mapped_to_coding_regions_of_single_target_organism(read.status):
             
@@ -88,7 +89,7 @@ def bin_reads (
                                         best_alignment.tax_id,
                                         target_organism_taxids,
                                         tax_tree)
-            add_cds_to_organism(organisms[target_organism_taxid], read, target_alignment)
+            add_cds_to_organism(organisms[target_organism_taxid], read, best_alignment)
 
     # STEP 3:
     #           | target | nontarget |
@@ -97,6 +98,7 @@ def bin_reads (
         elif   rstate.is_not_mapped_to_coding_region(read.status)\
         and (rstate.is_mapped_to_target_organisms(read.status)\
             or rstate.is_mapped_to_mixed_organisms(read.status)):
+            continue
             # assign to best score
             # add read to organism
 
@@ -116,7 +118,7 @@ def bin_reads (
                                         best_alignment.tax_id,
                                         target_organism_taxids,
                                         tax_tree)
-            add_read_to_organism(organisms[target_organism_taxid], read, target_alignment)
+            add_read_to_organism(organisms[target_organism_taxid], read, best_alignment)
 
         else:
             print read.id, read.status
@@ -155,7 +157,8 @@ def determine_target_organism(alignment_tax_id, target_organism_taxids, tax_tree
 
 def add_cds_to_organism(organism, read, target_alignment):
     target_cdss = target_alignment.aligned_cdss
-    binned_read = resdata.BinnedRead(read_id)
+    assert(len(target_cdss) >= 1)
+    binned_read = resdata.BinnedRead(read.id)
     if len(target_cdss) == 1:
         # do stuffs
         (target_cds, intersection) = target_cdss[0]
@@ -170,7 +173,7 @@ def add_cds_to_organism(organism, read, target_alignment):
         identified_cds = organism.identified_coding_regions[target_cds]
         identified_cds.add_binned_read(binned_read)
     else:
-        identified_cds = resdata.IdentifiedCds(cds)
+        identified_cds = resdata.IdentifiedCds(target_cds)
         identified_cds.add_binned_read(binned_read)
         organism.add_identified_coding_region(identified_cds)
 
@@ -220,3 +223,8 @@ def extract_noncoding_target_alignments(
             print is_target
             noncoding_target_alignments.append(alignment)
     return noncoding_target_alignments
+
+
+def add_read_to_organism(organism, read, target_alignment):
+    binned_read = resdata.BinnedRead(read.id)
+    organism.add_read_aligned_to_noncoding_region(binned_read)

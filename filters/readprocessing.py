@@ -157,7 +157,7 @@ def mark_single_alignment_read(read, read2cds_repository, tax_tree, target_organ
     else:
         org_type = organism_type_status.NONTARGET_ORGANISM 
     # coding region alignment count status
-    if not read2cds_repository.has_key(read.id):
+    if len(alignment.aligned_cdss) == 0:
         cds_aln_count = coding_region_aln_count_status.NO_CODING_ALIGNMENTS
     else:
         cds_aln_count = coding_region_aln_count_status.ONE_CODING_ALIGNMENT
@@ -192,11 +192,15 @@ def mark_multiple_alignment_read(read, read2cds_repository, tax_tree, target_org
         org_type = organism_type_status.MIXED_ORGANISMS
     # coding region alignment type
     cds_aln_type = 0
-    if not read2cds_repository.has_key(read.id):
+    aligned_cds_count = 0
+    for aln in alignments:
+        if len(aln.aligned_cdss) != 0:
+            aligned_cds_count += 1
+    if not aligned_cds_count:
         cds_aln_count = coding_region_aln_count_status.NO_CODING_ALIGNMENTS
     else:
         cdss = read2cds_repository[read.id]
-        if len(cdss) == 1:
+        if aligned_cds_count == 1:
             cds_aln_count = coding_region_aln_count_status.ONE_CODING_ALIGNMENT
         else:
             cds_aln_count = coding_region_aln_count_status.MULTIPLE_CODING_ALIGNMENTS

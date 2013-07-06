@@ -21,7 +21,7 @@ class IdentifiedCds (object):
     def set_binned_reads(self, binned_reads):
         self.binned_reads = binned_reads
     def add_binned_read(self, binned_read):
-        self.binned_read.add(binned_read)
+        self.binned_reads.append(binned_read)
 
 
 class Organism (object):
@@ -62,3 +62,6 @@ class Organism (object):
             return True
         else:
             return False
+
+    def get_reads(self):
+            return self.reads_aligned_to_noncoding_regions + self.reads_aligned_to_coding_regions
