@@ -36,13 +36,9 @@ class TestRunArgParser(DefaultBinnerArgParser):
                 help='XML output',
                 type=str)
 
-
-
 def log_start (log, args):
     log.info('BINNER RUN')
     log.info("Input: %s" % args.input)
-
-
 
 def main():
     '''
@@ -145,6 +141,7 @@ def main():
         None,
         None,
         False) 
+
     for org in orgs.values():
         print org.name
         print len(set(org.get_reads()))

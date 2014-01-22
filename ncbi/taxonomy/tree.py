@@ -79,6 +79,9 @@ class TaxTree ():
         ''' Finds the lowest common ancestor of
             a list of nodes
         '''
+        if len(taxid_list) == 0:
+            raise Exception ("taxid_list is empty, cannot find LCA!")
+
         # each of the visited nodes remembers how many
         # child nodes traversed it
         self.num_visited        = defaultdict(int)
