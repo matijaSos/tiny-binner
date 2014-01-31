@@ -6,7 +6,6 @@ import argparse
 import sys,os
 import operator
 sys.path.append(os.getcwd())
-
 from utils.argparser import DefaultBinnerArgParser
 from ncbi.db.data_access import DataAccess
 from ncbi.taxonomy.tree import TaxTree

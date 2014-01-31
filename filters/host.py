@@ -138,10 +138,6 @@ def are_all_alignments_host(read_alignments, tax2category, potential_hosts):
         return True
     return False
 
- 
-    
-
-
 def determine_filtering_method(delete_host):
     if delete_host:
         def filter_alignment(x_list, new_x, status):

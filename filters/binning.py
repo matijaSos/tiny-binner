@@ -14,12 +14,13 @@ def bin_reads (
          output=True
          ):
     '''
-    :param reads list of Read objects
-    :param cds_repository dictionary (key: UnityCds, value: CdsAlignment)
-    :param read2cds_repository dictionary (key: read_id, value: [CdsAlignment])
-    :param tax_tree TaxTree object
-    :param target_organism_taxids list of identified organism tax IDs. These
-    are the organisms all reads will be mapped to.
+    :param reads                    list of Read objects
+    :param cds_repository           dictionary (key: UnityCds, value: CdsAlignment)
+    :param read2cds_repository      dictionary (key: read_id, value: [CdsAlignment])
+    :param tax_tree                 TaxTree object
+    :param target_organism_taxids   list of identified organism tax IDs. These
+                                    are the organisms all reads will be mapped to.
+
     :param assign_multiple_alignment_to_same_organism function
     :param assign_multiple_alignment_to_different_organisms function
     :param output (boolean) if True, binning status will be output to stdio

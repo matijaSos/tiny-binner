@@ -169,8 +169,6 @@ class TaxTree ():
         else:
             raise ValueError('Internal error: looking for %s file type failed. No such file type supported.' % file_type)
 
-
-
     def _h_populate_child_nodes (self):
         ''' Populates child nodes from parent to child
             mapping dictionary
@@ -263,7 +261,6 @@ class TaxNode (object):
     * taxonomy rank
     * score (arbitrary)
     '''
-
 
     def __init__(self, organism_name, rank, score=0.):
         self.organism_name = organism_name
