@@ -7,9 +7,9 @@ For testing purposes MetaSim is used to generate syntethic metagenomic samples w
 
 Current functionalities are located in folder **snippets/**:
 
-* test_lca - Evaluate LCA algorithm with given MetaSim FASTA file
-* test_megan - Evaluate MEGAN with given MetaSim FASTA file
-* lca_vs_megan - Compare LCA and MEGAN output with given MetaSim FASTA file
+* **test_lca** - Evaluate LCA algorithm with given MetaSim FASTA file
+* **test_megan** - Evaluate MEGAN with given MetaSim FASTA file
+* **lca_vs_megan** - Compare LCA and MEGAN output with given MetaSim FASTA file
 
 
     
