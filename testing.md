@@ -1,7 +1,7 @@
 # Testing results
 
 Tests were conducted on CARMA3 synthetic datasets consisting of 25 bacterias. Data is generated with different error models and read lengths.    
-Correctness of LCA and MEGAN algorithms are compared.
+Correctness of LCA and MEGAN algorithms is compared.
 
 * 454-400bp
 
