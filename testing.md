@@ -6,7 +6,7 @@ Results of MEGAN are shown in the first two columns of each table.
 
 * 454-400bp
 
-Rank         |  True  | False | True  |  False
+Rank         |  True (MEGAN)  | False | True (LCA)  |  False 
 -------------|--------|-------|-------|--------
 superkingdom |  19992 | 0     | 25000 | 0
 phylum       |  19965 | 0     | 24990 | 1
@@ -18,7 +18,7 @@ species      |  15851 | 0     | 23992 | 1281
 
 * 454-256bp
 
-Rank         |  True  | False | True  |  False
+Rank         |  Truen (MEGAN)  | False | True (LCA)  |  False
 -------------|--------|-------|-------|--------
 superkingdom |  21597 | 0     | 25000 | 0
 phylum       |  21542 | 0     | 24991 | 1
@@ -30,7 +30,7 @@ species      |  17218 | 0     | 23619 | 1831
 
 * 454-80bp
 
-Rank         |  True  | False | True  |  False
+Rank         |  True (MEGAN)  | False | True (LCA)  |  False
 -------------|--------|-------|-------|--------
 superkingdom |  21300 | 0     | 24908 | 0
 phylum       |  21277 | 0     | 24890 | 7
@@ -42,7 +42,7 @@ species      |  16627 | 5     | 22574 | 3288
 
 * Illumina-80bp
 
-Rank         |  True  | False | True  |  False
+Rank         |  True (MEGAN)  | False | True (LCA) |  False
 -------------|--------|-------|-------|--------
 superkingdom |  22749 | 0     | 24908 | 0
 phylum       |  22726 | 0     | 24890 | 5
