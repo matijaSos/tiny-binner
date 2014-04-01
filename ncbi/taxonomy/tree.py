@@ -76,24 +76,38 @@ class TaxTree ():
                 return True
 
     def find_lca (self, taxid_list):
-        ''' Finds the lowest common ancestor of
-            a list of nodes
+        ''' Finds the lowest common ancestor of a list of nodes
+
+            Args:
+                taxid_list ([int]): List of tax_ids
+            Returns:
+                (int): tax_id of LCA
         '''
+        # Check if all nodes exist (and sum up blast scores)
+        for taxid in taxid_list:
+            if taxid != self.root and not self.parent_nodes.has_key(taxid):
+                try:
+                    raise Exception ("Key error, no element with id " + str(taxid))
+                except Exception, e:
+                    sys.stderr.write("{0}\n".format(e))
+
+        # Filter out invalid tax_ids - those without parents
+        taxid_list = filter(lambda tax_id: tax_id == self.root or self.parent_nodes.has_key(tax_id) , taxid_list)
+
+        # Check if list is empty
         if len(taxid_list) == 0:
-            raise Exception ("taxid_list is empty, cannot find LCA!")
+            try:
+                raise Exception ("taxid_list is empty, cannot find LCA!")
+            except Exception:
+                sys.stderr.write("{0}\n".format(e))
+                return 1 # Assign to root
 
         # each of the visited nodes remembers how many
         # child nodes traversed it
-        self.num_visited        = defaultdict(int)
+        self.num_visited = defaultdict(int)
 
-        current_taxids     = taxid_list
-        num_of_nodes       = len(current_taxids)
-
-        # first check if all nodes exist (and sum up blast scores)
-        for i in range (0, len(taxid_list)):
-            taxid       = taxid_list[i]
-            if not self.parent_nodes.has_key(taxid):
-                raise Exception ("Key error, no element with id %d." % taxid)
+        current_taxids  = taxid_list
+        num_of_nodes    = len(current_taxids)
 
         # now find the lowest common ancestor
         while (True):
@@ -102,16 +116,17 @@ class TaxTree ():
             for taxid in current_taxids:
                 # root node must not add itself to parent list
                 if   taxid != self.root:    parent_taxid = self.parent_nodes[taxid]
-                else:                        parent_taxid = None
+                else:                       parent_taxid = None
                 # if parent exists, append him to parent list
                 # duplicates ensure that every traversal will count
                 if parent_taxid:            parent_nodes.append(parent_taxid)
 
-                self.num_visited[taxid]     += 1
+                # Check for LCA
+                self.num_visited[taxid] += 1
                 if self.num_visited[taxid] == num_of_nodes:
-
                     self.lca_root = taxid
                     return taxid
+
             # refresh current nodes
             current_taxids = parent_nodes
 

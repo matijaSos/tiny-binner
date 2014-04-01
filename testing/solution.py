@@ -11,7 +11,7 @@ class Solution(object):
         '''Constructor
 
         Args:
-            id2taxon: (dict) read.id -> taxon
+            id2taxon (dict): read.id -> taxon
         '''
         self.id2taxon = id2taxon
 
@@ -19,7 +19,7 @@ class Solution(object):
         '''Fetches tax_id assigned to a given read
 
         Args:
-            read_id  (string) id of a read
+            read_id (string): id of a read
         Returns:
             (int): tax_id
         '''
@@ -34,10 +34,88 @@ class Solution(object):
         '''
         self.id2taxon[read_id] = tax_id;
 
+    # ------------------------- Output -------------------------- #
 
     def print_data(self):
+        '''
+        Outputs inner dictionary: read.id -> taxon.
+        '''
         for idx,taxon in self.id2taxon.iteritems():
             print str(idx) + " " + str(taxon)
+
+    def get_taxon_count(self):
+        '''Returns for each taxon how much reads is assigned to it.
+
+        Args:
+            None
+        Returns:
+            (dict): tax_id -> count
+            
+        '''
+        taxon_count = {}
+        for read_id, taxon in self.id2taxon.iteritems():
+            taxon_count[taxon] = taxon_count.get(taxon, 0) + 1
+
+        return taxon_count
+
+    def get_taxon_shares(self):
+        '''Returns share(abundance) of each taxon in read assignment.
+
+        Args:
+            None
+        Returns:
+            (dict): tax_id -> share
+        '''
+        taxon_count = self.get_taxon_count()
+
+        # Get shares - divide by number of reads
+        num_reads = len(self.id2taxon)
+        taxon_shares = {taxon:(float(count)/num_reads) 
+                        for taxon, count in taxon_count.items()}
+        
+        return taxon_shares;
+
+    def print_nicely(self, tax_tree):
+        '''Outputs share and count of each taxon.
+           
+        Output is sorted, starting from the taxon with the highest share(count).
+
+        Args:
+            tax_tree (TaxTree): Taxonomy tree, containing tax_id -> name mapping
+        Returns:
+            None
+        '''
+        taxon_shares = self.get_taxon_shares()
+        taxon_count  = self.get_taxon_count()
+
+        # Sort by share, higher first
+        sorted_tax_shares = sorted(taxon_shares.iteritems(), 
+                                   key      = lambda t:t[1],
+                                   reverse  = True)
+
+        total_share = 0
+        total_count = 0
+        # Print data for each tax id
+        for tax_id, share in sorted_tax_shares:
+            count = taxon_count[tax_id]
+            name  = tax_tree.nodes[tax_id].organism_name
+            rank  = tax_tree.nodes[tax_id].rank
+
+            print("{0:10d} {1:20} {2:60} {3:10.4f}% {4:10d}".format(
+                    tax_id,
+                    rank,
+                    name,
+                    share*100,
+                    count)
+                  )
+            total_share += share
+            total_count += count
+
+        print "-------------"
+
+        print("total_share: {0}%".format(total_share*100))
+        print("total_count: {0}".format(total_count))
+
 
     # --------------------- Factory methods ---------------------- #
 

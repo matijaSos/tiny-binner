@@ -32,9 +32,12 @@ class LCABinner(object):
 
             # Find LCA
             tax_ids = map(lambda aln: aln.tax_id, read.get_alignments())
-            if len(tax_ids) == 0:
+            # Filter None tax_ids
+            tax_ids_filtered = filter(lambda tax_id: tax_id != None, tax_ids)
+
+            if len(tax_ids_filtered) == 0:
                 continue
-            lca = self.tax_tree.find_lca(tax_ids)
+            lca = self.tax_tree.find_lca(tax_ids_filtered)
 
             # Store assignment
             sol.add_assignment(read.id, lca)
