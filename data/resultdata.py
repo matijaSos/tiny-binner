@@ -78,8 +78,7 @@ class Organism (object):
     def get_reads(self):
             return self.reads_aligned_to_noncoding_regions + self.reads_aligned_to_coding_regions
 
-
-    def to_xml_organism(self, tax_tree):
+    def to_xml_organism(self, tax_tree, total_read_num):
         xml_genes = []
         for identified_cds in self.identified_coding_regions.values():
             xml_genes.append(identified_cds.to_xml_gene())
@@ -87,7 +86,7 @@ class Organism (object):
         for binned_read in set(self.reads_aligned_to_noncoding_regions+self.reads_aligned_to_coding_regions):
             xml_reads.append(binned_read.to_xml_read())
             #amount_count, amount_relative, taxon_id, taxonomy, name, genus, species, genes, variants, reads, is_host=False
-        amount_count = len(self.reads_aligned_to_coding_regions + self.reads_aligned_to_noncoding_regions)
+        amount_count = len(self.reads_aligned_to_coding_regions) + len(self.reads_aligned_to_noncoding_regions)
         lineage = tax_tree.get_lineage(self.tax_id)
         lineage_names = []
         for tax_id in lineage:
@@ -98,7 +97,7 @@ class Organism (object):
         genus = tax_tree.nodes[genus_taxid].organism_name if genus_taxid else ''
         species = tax_tree.nodes[species_taxid].organism_name if species_taxid else ''
 
-        xml_organism = xml.Organism(amount_count, amount_count, self.tax_id,
+        xml_organism = xml.Organism(amount_count, amount_count/float(total_read_num), self.tax_id,
                                 taxonomy, self.name, genus, species,
                                 xml_genes, None, xml_reads)
         return xml_organism

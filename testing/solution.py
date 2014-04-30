@@ -4,7 +4,7 @@ import csv
 
 class Solution(object):
     '''
-    Containts solution of metagenomic sample.
+    Contains solution of metagenomic sample.
     To each read single tax_id is assigned.
     '''
     def __init__(self, id2taxon):

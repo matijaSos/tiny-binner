@@ -28,6 +28,7 @@ def bin_reads (
     organisms = _create_organisms(target_organism_taxids, tax_tree)
 
     for read in reads:
+        '''
         print bin(read.status)
         for aln in read.get_alignments():
             print aln.tax_id,
@@ -37,6 +38,7 @@ def bin_reads (
         print 'n aln read:   ', rstate.is_multiple_alignment_read(read.status)
         print 'target orgs:  ', rstate.is_mapped_to_target_organisms(read.status)
         print 'mixd orgs:    ', rstate.is_mapped_to_mixed_organisms(read.status)
+        '''
 
     # STEP 0:
     #           | target | nontarget |
@@ -46,7 +48,7 @@ def bin_reads (
         or rstate.is_mapped_to_nontarget_organisms(read.status):
             # maybe write down additional organisms
             # skip this one
-            print '\tApplying step (1).'
+            # print '\tApplying step (1).'
             continue
 
     # STEP 1:
@@ -57,7 +59,7 @@ def bin_reads (
         and  rstate.is_mapped_to_single_coding_region(read.status)\
         and  rstate.is_mapped_to_coding_regions_of_single_target_organism(read.status):
             
-            print '\tApplying step (2).'
+            # print '\tApplying step (2).'
             # add gene to organism
             # add read to organism
             target_alignment = read.get_alignments(format=list)[0]
@@ -66,17 +68,17 @@ def bin_reads (
                                         target_alignment.tax_id, 
                                         target_organism_taxids, 
                                         tax_tree)
-            add_cds_to_organism(organisms[target_organism_taxid], read, target_alignment)
+            add_cds_to_organism(organisms[target_organism_taxid], read, target_alignment) # Why not target_cds?
 
     # STEP 2:
     #           | target | nontarget |
-    #    coding |   N    |     x     |
+    #    coding |   N    |     X     |
     # noncoding |   X    |     X     |
         elif rstate.is_mapped_to_coding_regions_of_multiple_target_organisms(read.status)\
         or   rstate.is_mapped_to_coding_regions_of_mixed_organisms(read.status):
             
-            print '\tApplying step (3).'
-            # if organisms are related, assign to lowest
+            # print '\tApplying step (3).'
+            # if organisms are related, assign to lowest - not implemented
             # if not, assign to best score
             # add read to organism
             # add gene to organism
@@ -90,7 +92,7 @@ def bin_reads (
                                         best_alignment.tax_id,
                                         target_organism_taxids,
                                         tax_tree)
-            add_cds_to_organism(organisms[target_organism_taxid], read, best_alignment)
+            add_cds_to_organism(organisms[target_organism_taxid], read, best_alignment) # Why not CDS but whole alignment?
 
     # STEP 3:
     #           | target | nontarget |
@@ -103,11 +105,11 @@ def bin_reads (
             # assign to best score
             # add read to organism
 
-            print '\tApplying step (4).'
+            # print '\tApplying step (4).'
             cds_num = 0
             for aln in read.get_alignments(format=list):
                 cds_num += len(aln.aligned_cdss)
-            print cds_num
+            # print cds_num
 
             target_alignments = extract_noncoding_target_alignments(
                 read.get_alignments(format=list),
@@ -120,10 +122,9 @@ def bin_reads (
                                         target_organism_taxids,
                                         tax_tree)
             add_read_to_organism(organisms[target_organism_taxid], read, best_alignment)
-
         else:
-            print read.id, read.status
-        print
+            continue
+            # print read.id, read.status
     return organisms
 
 def _create_organisms(target_organism_taxids, tax_tree):
@@ -164,10 +165,13 @@ def add_cds_to_organism(organism, read, target_alignment):
         # do stuffs
         (target_cds, intersection) = target_cdss[0]
     else:
+        # Get CDSs
         cdss = []
         for (cds, intersection) in target_cdss:
             cdss.append(cds)
+        # Sort by length
         sorted_cdss = sorted(cdss, key = lambda cds: Location.from_location_str(cds.location).length())
+        # Take the one with the biggest length
         target_cds = sorted_cdss[-1]
 
     if organism.contains_identified_coding_region(target_cds):
@@ -178,9 +182,8 @@ def add_cds_to_organism(organism, read, target_alignment):
         identified_cds.add_binned_read(binned_read)
         organism.add_identified_coding_region(identified_cds)
 
-
 def find_best_alignment(target_alignments):
-    print 'Target alns:', len(target_alignments)
+    # print 'Target alns:', len(target_alignments)
     sorted_alignments = sorted(target_alignments, key = lambda aln: aln.score)
     return sorted_alignments[-1]
 
@@ -224,7 +227,6 @@ def extract_noncoding_target_alignments(
             print is_target
             noncoding_target_alignments.append(alignment)
     return noncoding_target_alignments
-
 
 def add_read_to_organism(organism, read, target_alignment):
     binned_read = resdata.BinnedRead(read.id)

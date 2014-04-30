@@ -2,7 +2,7 @@ import xml.etree.ElementTree as ET
 import sys,os
 sys.path.append(os.getcwd())
 
-from   utils import enum
+from utils import enum
 from utils.autoassign import autoassign
 
 MISSING_TAXID = -1
@@ -33,6 +33,14 @@ class Organism (object):
         :param genes: list of gene objects mapped to this organism or None
                       if there are no reported genes
         '''
+
+    def __hash__(self):
+        return hash(self.taxon_id)
+
+    def __eq__(self, other):
+        '''Equality - by taxon id
+        '''
+        return self.taxon_id == other.taxon_id
 
     @classmethod
     def from_xml_organism_node(org, organism_node):

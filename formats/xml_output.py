@@ -75,7 +75,7 @@ class Read(object):
 class XMLOutput(object):
 
     def __init__(self, dataset, organisms, output_file_name=None):
-        ''' XMLOutpu init
+        ''' XMLOutput init
             @param (Dataset) dataset structure with info about the dataset
             @param ([Organism]) organisms a list of all organims and coresponding data
             @param output_file_name path to xml output relative to binner/ e.g. 'formats/myout.xml'

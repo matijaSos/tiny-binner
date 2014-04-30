@@ -33,8 +33,10 @@ class LCABinner(object):
             # Find LCA
             tax_ids = map(lambda aln: aln.tax_id, read.get_alignments())
             # Filter None tax_ids
+            # Some alignments may not have tax_id. This should be logged!
             tax_ids_filtered = filter(lambda tax_id: tax_id != None, tax_ids)
 
+            # Skip read with no valid alignments (also log?) 
             if len(tax_ids_filtered) == 0:
                 continue
             lca = self.tax_tree.find_lca(tax_ids_filtered)

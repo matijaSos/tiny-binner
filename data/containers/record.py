@@ -75,7 +75,7 @@ class RecordContainer (object):
         except AttributeError:
             raise AttributeError("RecordContainer has not attribute 'db_query'. Did you forget to envoke set_db_access()?")
         if not self.record_repository.has_key(record_id):
-            record = self.db_query.get_record(record_id)
+            record = self.db_query.get_record(record_id) # What is type of this object?
             try :
                 getattr(record, 'version')
                 self.record_repository[record_id] = record

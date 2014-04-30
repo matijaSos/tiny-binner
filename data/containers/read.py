@@ -62,13 +62,11 @@ class ReadContainer (object):
                     read_alignment.nucleotide_accession)
                 read_alignment.determine_coding_seqs_optimal(record)
 
-
     def fetch_read (self, read_id):
         if self.read_repository.has_key(read_id):
             return self.read_repository[read_id]
         else:
             raise KeyError("Read repository doesn't contain read associated with read ID: {0}".format(read_id))
-
 
     def fetch_all_reads (self, format=iter):
         return format(self.read_repository.values())
@@ -93,10 +91,18 @@ class ReadContainer (object):
         for read in new_reads:
             self.read_repository[read.id] = read
 
-
     def _add_read_from_str (self, read_str):
         read = Read.from_read_str(read_str)
         assert (not self.read_repository.has_key(read.id))
         self.read_repository[read.id] = read
 
-
+    def get_read_count(self):
+        '''Returns number of reads present in a read container.
+        
+        Args:
+            None
+        Returns:
+            (int): number of reads
+        '''
+        return len(self.read_repository)
+        

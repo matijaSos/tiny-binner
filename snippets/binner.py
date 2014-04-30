@@ -73,6 +73,8 @@ def main():
     read_container.load_alignment_data(args.input)
     #---SET TAXIDS FOR ALL ALIGNMENTS--#
     read_container.set_taxids(dataAccess)
+    # Remember total number of reads
+    total_read_num = read_container.get_read_count()
     print 'done'
 
     #------- FILTER HOST READS -------#
@@ -88,7 +90,9 @@ def main():
         #unassigned_taxid=
         -1,
         host_filter.perc_of_host_alignments_larger_than)
+
     dataAccess.clear_cache()    # deletes gi2taxid cache
+
     reads_with_no_host_alignments = host_filter.filter_potential_hosts_alignments(
         new_reads,
         tax_tree.tax2relevantTax,
@@ -96,6 +100,7 @@ def main():
         True,   # delete host alignments
         True,   # filter unassigned
         -1)     # unassigned taxid
+
     host_read_count = len(read_container.fetch_all_reads(format=list)) - len(reads_with_no_host_alignments)
     read_container.set_new_reads(reads_with_no_host_alignments)
     print 'done'
@@ -118,7 +123,7 @@ def main():
     print 'done'
 
     print '6. Estimating organisms present in sample...'
-    target_organisms = [633, 632, 263, 543, 86661, 1392, 55080, 1386]
+    target_organisms = [633, 632, 263, 543, 86661, 1392, 55080, 1386] # What is this part?
     print 'done.'
    
     print '7. Annotating reads...' 
@@ -141,20 +146,24 @@ def main():
         None,
         False) 
 
+    '''
     for org in orgs.values():
         print org.name
         print len(set(org.get_reads()))
         print len(org.identified_coding_regions)
     print 'done.'
+    '''
+
+    print ("total_read_num: " + str(total_read_num))
 
     print '9. Generating XML...'
     dataset = Dataset(args.xml_description_file)
     xml_organisms = []
-    host = Organism (host_read_count, host_read_count, None, None, "Host",
+    host = Organism (host_read_count, host_read_count/float(total_read_num), None, None, "Host",
                  None, None, [], [], [], is_host=True)
     xml_organisms.append(host)
     for org in orgs.values():
-        xml_organisms.append(org.to_xml_organism(tax_tree))
+        xml_organisms.append(org.to_xml_organism(tax_tree, total_read_num))
     xml_organisms.sort(key=operator.attrgetter("amount_count"), reverse=True)
     xml = XMLOutput(dataset, xml_organisms, args.output) 
     xml.xml_output();

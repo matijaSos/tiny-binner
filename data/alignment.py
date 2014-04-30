@@ -3,6 +3,8 @@ from utils.location import Location
 from utils.location import LoactionParsingException
 from utils.autoslots import Autoslots
 
+import numpy
+
 class ReadAlnLocation (Autoslots):
     """ Contains information on alignment location on
         an NT nucleotide string
@@ -22,6 +24,7 @@ class ReadAlnLocation (Autoslots):
         self.potential_host         = None
         # self.determine_coding_seqs()
         # Sto je sa .aligned_cdss? Navesti to negdje u komentarima ako postoji!
+
 
     def set_active (self, active):
         '''
@@ -226,7 +229,11 @@ class CdsAlignment (Autoslots):
     def __init__ (self, cds):
         self.cds = cds              # CDS object (from Mladen)
         self.aligned_regions = {}   # dictionary of CdsAlnSublocation
-        pass
+
+        # Added by Matija
+        self.coverage           = None
+        self.mean_coverage      = None
+        self.coverage_std_dev   = None
 
     def __hash__ (self):
         return hash ((self.cds.record_id, self.cds.location))
@@ -251,6 +258,154 @@ class CdsAlignment (Autoslots):
 
         aligned_sublocation             = CdsAlnSublocation (read_id, aligned_location, score)
         self.aligned_regions[read_id]   = aligned_sublocation
+
+    def get_cds_location(self):
+        '''Returns Location object of the associated CDS.
+
+        Args:
+            None
+        Returns:
+            (Location): Location of the associated CDS.
+        '''
+        return Location.from_location_str(self.cds.location)
+
+
+    def get_cds_length(self):
+        '''Returns length of the associated CDS.
+
+        Args:
+            None
+        Returns:
+            (int): Length of the associated CDS.
+        '''
+        return self.get_cds_location().length()
+
+
+    def get_tax_id(self):
+        '''Returns tax_id of CDS.
+
+        Args:
+            None
+        Returns:
+            (int): Tax id assoaciated with CDS
+        '''
+        return self.cds.taxon
+        
+    def get_coverage(self):
+        '''Calculates and returns coverage of this CDS.
+
+        Coverage is defined as a mathematical function:
+        for each base is known how many reads(alns) overlap it.
+
+        Return object is a dictionary holding that data.
+
+        Args:
+            None
+        Returns:
+            (dict): base_idx (int) -> num_overlaps (int)
+        '''
+
+        if self.coverage is not None:
+            return self.coverage
+
+        # Idea: shift everything for self.cds.location.start to left
+        # because cds may not start from 0 (I think)
+
+        # By default - zero
+        coverage = {}
+
+        # Get sublocation
+        # Assumption: sublocation is continuous, without holes
+        for aln_subloc in self.aligned_regions.values():
+            subloc = aln_subloc.location
+
+            # Skip if sublocation is invalid
+            if (subloc.start == None or subloc.end == None):
+                continue
+
+            # Increase for overlapping bases
+            for base_idx in range(subloc.start, subloc.end+1):
+                coverage[base_idx] = coverage.get(base_idx, 0) + 1
+            
+        self.coverage = coverage
+        return coverage
+
+    def get_mean_coverage(self):
+        '''Returns mean value of coverage.
+
+        Calculated directly from get_coverage().
+
+        Args:
+            None
+        Returns:
+            (float): Mean value of coverage.
+        '''
+        if self.mean_coverage is not None:
+            return self.mean_coverage
+
+        coverage = self.get_coverage()
+        mean = sum(coverage.values()) / float(self.get_cds_length())
+
+        self.mean_coverage = mean
+        return mean
+
+    def get_coverage_std_dev(self):
+        '''Returns standard deviation of coverage of CDS.
+
+        Args:
+            None
+        Returns:
+            (float): Standard deviation of CDS coverage.
+        '''
+        if self.coverage_std_dev is not None:
+            return self.coverage_std_dev
+
+        # Create coverage list from dict
+        coverage = self.get_coverage()
+        cov_list = []
+
+        cds_loc = self.get_cds_location()
+        for base_idx in range(cds_loc.start, cds_loc.end+1):
+            cov_val = coverage.get(base_idx, 0)
+            cov_list.append(cov_val)
+            
+        self.coverage_std_dev = numpy.std(cov_list)
+        return self.coverage_std_dev
+
+    def get_std_over_mean(self):
+        return self.get_coverage_std_dev() / float(self.get_mean_coverage())
+
+    def coverage_to_file(self, path):
+        '''Export coverage to the specifed file.
+
+        Exports dictionary holding (base_idx -> coverage),
+        where coverage > 0.
+        And also other important data.
+
+        Args:
+            path (string): Path of file to export coverage to.
+        Returns:
+            None
+        '''
+        handle = open(path, 'w')
+        # ------------ Header ------------- #
+        # Mean
+        mean = self.get_mean_coverage()
+        handle.write("{0:.2f}\n".format(mean))
+        # Length
+        length = self.get_cds_length()
+        handle.write("{0}\n".format(length))
+        # Gene
+        gene = self.cds.gene
+        handle.write("{0}\n".format(gene))
+        # Product
+        product = self.cds.product
+        handle.write("{0}\n".format(product))
+        
+        # Coverage
+        for base_idx in sorted(self.get_coverage()):
+            handle.write("{0} {1}\n".format(base_idx, self.coverage[base_idx]))
+        handle.close()
 
     def is_active(self):
         '''
@@ -293,7 +448,6 @@ class CdsAlignment (Autoslots):
             ret += tab*2 + "(key) " + key + ":\n"
             ret += tab*3 + str(aln_reg).replace("\n", "\n"+(tab*3)) + "\n"
         return ret
-
 
 class CdsAlnSublocation (Autoslots):
     ''' Represents the sublocation of a CDS covered
