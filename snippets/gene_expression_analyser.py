@@ -32,6 +32,37 @@ class ArgParser(DefaultBinnerArgParser):
         self.add_argument('export_path',
                 help='Folder to export data to',
                 type=str)
+
+def export_CDS_graph_data(cds_alns, export_path):
+    '''Export coverage data of each cds_alignment to the specified folder.
+
+    This data is later used to create coverage graphs
+
+    Args:
+        cds_alns    ([CdsAlignment]):   cds alignments objects
+        export_path (string):           folder to export data to
+    '''
+
+    # Create folder where data about CDSs will be stored
+    if not os.path.exists(export_path):
+        os.makedirs(export_path)
+
+    # Export some amount of best CDSs
+    i = 1
+    for cds_aln in cds_alns_sorted:
+        filename = "cds_" + str(i) + ".txt"
+        coverage_path = os.path.join(export_path, filename)
+
+        print(str(i) + ": " + str(cds_aln.get_std_over_mean()))
+
+        cds_aln.coverage_to_file(coverage_path)
+
+        if i == 50: # TODO: Define this somehow as parameter
+            break
+
+        i += 1
+    
+
 def main():
     '''
     Script to analyse  genes expressed for given tax id.
@@ -54,6 +85,8 @@ def main():
     #---SET TAXIDS FOR ALL ALIGNMENTS--#
     read_container.set_taxids(dataAccess)
     print 'done'
+
+    # TODO: Here i should recognize host reads!
 
     # ------------------------------------- #
 
@@ -79,15 +112,56 @@ def main():
     
     # Take only CDSs of given tax_id
     # Remove CDSs with too low mean coverage value
-    min_mean_coverage = 10
+    min_mean_coverage   = 10
+    min_length          = 20
 
     cds_alns = cds_aln_container.fetch_all_cds_alns(format=list)
-    print ( "All CDSs: " + str(len(cds_alns)) )
+    print ( "All CDSs (all organisms): " + str(len(cds_alns)) )
 
     cds_alns_targeted = [cds_aln for cds_aln in cds_alns 
                          if  cds_aln.get_tax_id() == args.tax_id
+                         # Filters
+                         and cds_aln.get_cds_length() > min_length
                          and cds_aln.get_mean_coverage() > min_mean_coverage]
 
+    # Remove CDSs with no gene/product
+    cds_alns_targeted = [cds_aln for cds_aln in cds_alns_targeted
+                         if  cds_aln.cds.gene != None
+                         and cds_aln.cds.product != None]
+
+    # ------------------- CDSs filtered and ready to be analyzed ------------------- #
+
+    # Number of targeted CDSs
+    print ( "Targeted CDSs: " + str(len(cds_alns_targeted)) )
+
+    '''
+    print ("Sorting CDSs: stddev/mean")
+    cds_alns_sorted = sorted(cds_alns_targeted, 
+                             key=lambda cds_aln: cds_aln.get_std_over_mean(),
+                             reverse=False)
+
+    # TODO: Here I should somehow determine which CDSs are "expressed", and which are not?
+
+    # Write to file stuff(gene, protein_id) for each cds_aln
+    print("Writing data to file")
+    path = args.export_path
+    f = open(path, 'w')
+    
+    for cds_aln in cds_alns_targeted:
+        gene        = cds_aln.cds.gene
+        product     = cds_aln.cds.product
+        protein_id  = cds_aln.cds.protein_id
+
+        f.write("{0} {1}\n".format(gene, protein_id))
+    f.close()
+
+    print("Done")
+    '''
+    
+    # -------------------- #
+    
+
+    '''
     # Analyse those CDSs
     print ( "Targeted CDSs: " + str(len(cds_alns_targeted)) )
 
@@ -108,14 +182,10 @@ def main():
     print("Nones: " + str(no_locs_num))
             
     print("---------------------------------------------")
-
-    print ("Sorting CDSs by std dev of coverage...")
-    # Sort CDSs by mean std dev of coverage
-    cds_alns_sorted = sorted(cds_alns_targeted, 
-                             key=lambda cds_aln: cds_aln.get_std_over_mean(),
-                             reverse=False)
+    '''
 
 
+    '''
     # Create folder where data about CDSs will be stored
     if not os.path.exists(args.export_path):
         os.makedirs(args.export_path)
@@ -130,15 +200,16 @@ def main():
 
         cds_aln.coverage_to_file(coverage_path)
 
-        if i == 20: # TODO: Define this somehow as parameter
+        if i == 50: # TODO: Define this somehow as parameter
             break
 
         i += 1
 
     # Load CDS container
+    '''
 
     # Analyse stuff
-    print("Analysing stuff!")
+    # print("Analysing stuff!")
 
     '''
     print '4. Creating LCA solution...'

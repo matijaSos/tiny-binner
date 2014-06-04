@@ -36,6 +36,7 @@ def filter_potential_hosts_alignments(reads, tax2category, potential_hosts, dele
 
             if read_alignment.tax_id is None:
                 potential_host_indexes.append(i)
+                continue
 
             taxid_category = tax2category.get(read_alignment.tax_id, unassigned_taxid)
             if taxid_category in potential_hosts:
@@ -120,7 +121,7 @@ def is_best_score_host(read_alignments, tax2category, potential_hosts):
         return True
     else: return False
 
-def perc_of_host_alignments_larger_than(read_alignments, tax2category, potential_hosts, percentage=0.5):
+def perc_of_host_alignments_larger_than(read_alignments, tax2category, potential_hosts, percentage=0.8):
     host_aln_count = 0
     aln_count = 0
     for read_alignment in read_alignments:

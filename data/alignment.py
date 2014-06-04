@@ -327,6 +327,12 @@ class CdsAlignment (Autoslots):
             for base_idx in range(subloc.start, subloc.end+1):
                 coverage[base_idx] = coverage.get(base_idx, 0) + 1
             
+        # Put zero for non-touched bases
+        cds_loc = self.get_cds_location()
+        for base_idx in range(cds_loc.start, cds_loc.end+1):
+            if base_idx not in coverage:
+                coverage[base_idx] = 0
+
         self.coverage = coverage
         return coverage
 
