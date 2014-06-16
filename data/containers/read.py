@@ -55,7 +55,6 @@ class ReadContainer (object):
         mentioned in the alignment file
         @param record_container (RecordContainer)
         '''
-
         for read in self.fetch_all_reads(format=iter):
             for read_alignment in read.get_alignments(format=iter):
                 record = record_container.fetch_existing_record(

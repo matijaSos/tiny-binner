@@ -308,8 +308,8 @@ class CdsAlignment (Autoslots):
         if self.coverage is not None:
             return self.coverage
 
-        # Idea: shift everything for self.cds.location.start to left
-        # because cds may not start from 0 (I think)
+        # TODO: Idea: shift everything for self.cds.location.start to left
+        # because cds may not start location may not be 0
 
         # By default - zero
         coverage = {}
@@ -366,6 +366,16 @@ class CdsAlignment (Autoslots):
         if self.coverage_std_dev is not None:
             return self.coverage_std_dev
 
+        '''
+        mean_cov = self.get_mean_coverage()
+
+        devs = []
+        for cov_val in self.get_coverage().values():
+            devs.append(abs(cov_val - mean_cov))
+            
+        self.coverage_std_dev = sum(devs) / float(len(devs))
+        
+        '''
         # Create coverage list from dict
         coverage = self.get_coverage()
         cov_list = []
@@ -376,10 +386,14 @@ class CdsAlignment (Autoslots):
             cov_list.append(cov_val)
             
         self.coverage_std_dev = numpy.std(cov_list)
+
         return self.coverage_std_dev
 
     def get_std_over_mean(self):
-        return self.get_coverage_std_dev() / float(self.get_mean_coverage())
+
+        ret = self.get_coverage_std_dev() / float(self.get_mean_coverage())
+
+        return ret
 
     def coverage_to_file(self, path):
         '''Export coverage to the specifed file.

@@ -1,6 +1,7 @@
 
 import argparse
 import sys,os
+import time
 sys.path.append(os.getcwd())
 
 from utils.argparser import DefaultBinnerArgParser
@@ -31,7 +32,6 @@ class ArgParser(DefaultBinnerArgParser):
         self.add_argument('export_folder',
                 help='Folder to write ribosomal CDS analysis data to',
                 type=str)
-
 
         # -------- Optional args -------- #
 
@@ -66,14 +66,16 @@ def export_CDS_stats_data(cds_alns, export_folder, export_file):
 
             protein_id  = cds_aln.cds.protein_id
             tax_id      = cds_aln.cds.taxon
+            product     = cds_aln.cds.product # TODO: this one should be optional!
             # Quality measure data
-            measure = cds_aln.get_std_over_mean()
-            std     = cds_aln.get_coverage_std_dev()
+            # measure = cds_aln.get_std_over_mean()
+            # std     = cds_aln.get_coverage_std_dev()
             mean    = cds_aln.get_mean_coverage()
             length  = cds_aln.get_cds_length()
-            f.write('{0:4} {1:10} {2:10d} {3:10.4f} {4:8.4f} {5:8.4f} {6:8d}\n'.format(gene, 
+            f.write('{0:4} {1:10} {2:10d} {3:8.4f} {4:8d} {5:50}\n'.format(gene, 
                                                                         protein_id, tax_id, 
-                                                                        measure, std, mean, length))
+                                                                        mean, length,
+                                                                        product))
 
 def export_CDS_graph_data(cds_alns, export_path):
     '''Export coverage data of each cds_alignment to the specified folder.
@@ -100,7 +102,41 @@ def export_CDS_graph_data(cds_alns, export_path):
         cds_aln.coverage_to_file(coverage_path)
         i += 1
 
+def is_ribosomal(product):
+    '''Determines if given product is of ribosomal gene.
+
+    Args:
+        product (string):   Gene product
+    Returns:
+        True if product is considered to be ribosomal,
+        False otherwise
+    '''
+    # May have any of
+    any_of  = ["ribosomal", "5S", "16S", "23S",
+                            "5s", "16s", "23s"]
+    # Must not have
+    none_of = ["nonribosomal"]
+
+    for elem in none_of:
+        if elem in product: return False
+
+    for elem in any_of:
+        if elem in product: return True
+
+    return False
+
 def count_nones(cds_alns):
+    '''Counts how many data in cds alignment data is missing.
+
+    If it is None, then it is considered to be missing.
+    Data checked are 'gene', 'protein_id' and 'product' attributes of each
+    cds alignments are checked.
+
+    Args:
+        cds_alns    ([CdsAlignment]):   cds alignments objects
+    Returns:
+        dict(attr_name(string) -> count(int)): Number of Nones for each attribute.
+    '''
 
     nones = {}
     nones['gene'] = 0
@@ -117,6 +153,117 @@ def count_nones(cds_alns):
         
     return nones
 
+def perc_format(text, part, total):
+    return "{0}: {1:.2f} ({2})\n".format(text, part/float(total), part)
+
+
+def export_species_data(species_data, total_reads, export_path, tax_tree, CDS_count=None):
+
+    with open(export_path, 'w') as f:
+        for tax_id in sorted(species_data, key=species_data.get, reverse=True):
+            count = species_data[tax_id]
+            try:
+                rank = tax_tree.nodes[int(tax_id)].rank
+                name = tax_tree.nodes[int(tax_id)].organism_name
+            except KeyError:
+                rank = None
+                name = None
+            frac = count / float(total_reads) * 100
+
+            line = "{0:10} {1:10d} {2:80} {3:10.2f}% {4:10d}".format(rank, tax_id, name, frac, count)
+            if CDS_count:
+                cds_count = CDS_count[tax_id]
+                line += "  CDSs: {0:5d}".format(cds_count)
+
+            f.write(line + "\n")
+
+
+        
+def assignment_analysis(tax_ids, reads, tax_tree, export_folder, CDS_count=None):
+    '''Analyses how god given reads "fit" to given tax_ids.
+       For those reads who cannot be assigned to any given tax_id,
+       separate analysis is conducted.
+
+    The analysis is conducted on the level of species.
+
+    Args:
+        tax_ids         (set(int)): Set of tax_ids of species
+        reads           ([Read]):   Reads to analyse
+        tax_tree        (TaxTree):  TaxTree used to get species level tax_ids
+        export_folder   (String):   Path of folder where analysis data will be stored
+        CDS_count       ({tax_id -> cds_num}): Holds number of CDSs of for each given tax_id
+    Returns:
+        None, but three files are creates as output
+    '''
+
+    species_given   = {}
+    species_new     = {}
+
+    # Stats
+    reads_assigned  = 0
+    no_aln_reads    = 0
+
+    for read in reads:
+
+        # Skip reads without alignments
+        if not read.has_alignments():
+            no_aln_reads += 1
+            continue
+
+        # Get given species to which this read "fits"
+        fits = set()
+
+        for aln in read.get_alignments():
+            tax_id = tax_tree.get_parent_with_rank(aln.tax_id, 'species')
+            if tax_id in tax_ids:
+                fits.add(tax_id)
+
+        if fits:
+            reads_assigned += 1
+            # Increase counter for "fit" species
+            for tax_id in fits:
+                species_given[tax_id] = species_given.get(tax_id, 0) + 1
+        else:
+            # Unassigned reads
+            species_set = set()
+            for aln in read.get_alignments():
+                tax_id = tax_tree.get_parent_with_rank(aln.tax_id, 'species')
+                species_set.add(tax_id)
+            for tax_id in species_set:
+                species_new[tax_id] = species_new.get(tax_id, 0) + 1
+
+            
+    # Store analysis data - for given species
+    species_given_path = os.path.join(export_folder, "species_ribosomal.txt")
+    export_species_data(species_given, len(reads), species_given_path, tax_tree, CDS_count)
+    # For "new", unexpected species
+    species_new_path = os.path.join(export_folder, "species_new.txt")
+    export_species_data(species_new, len(reads), species_new_path, tax_tree)
+
+    # Create summary
+    assn_summary_path = os.path.join(export_folder, "assignment_summary.txt")
+    with open(assn_summary_path, 'w') as f:
+
+        total_reads = len(reads)
+        f.write("Total reads: {0}\n".format(total_reads))
+        f.write("\n")
+        f.write("Number of ribosomal species: {0}\n".format(len(tax_ids)))
+        f.write("Number of 'new' species: {0}\n".format(len(species_new)))
+        f.write("\n")
+        f.write(perc_format("Reads assigned to tax ", reads_assigned, total_reads))
+        f.write("\n")
+        f.write(perc_format("Reads assigned to other ", total_reads - no_aln_reads - reads_assigned, total_reads))
+        f.write(perc_format("Reads with 0 alns ", no_aln_reads, total_reads))
+
+        '''
+        f.write("Mean aln number per read: {0:.2f}\n".format(avg_aln_num))
+        f.write(perc_format("Reads with 0 alns ", no_aln_reads, total_reads))
+        f.write("\n")
+        f.write(perc_format("Reads assigned to tax ", readsAssignedToTax, total_reads))
+        f.write(perc_format("Reads unassigned to tax ", readsUnassignedToTax, total_reads))
+        '''
+
+
 
 def main():
     '''
@@ -130,16 +277,30 @@ def main():
     # Access database
     dataAccess = DataAccess(args)
 
+    # ------------------ #
+
     print '1. Loading tax tree...'
+    start = time.time()
+
     tax_tree = TaxTree()
-    print 'done.'
+
+    end = time.time()
+    print("done: {0:.2f} sec".format(end - start))
+
+    # ------------------ #
 
     print '2. Loading alignment file...'
+    start = time.time()
+
     read_container = ReadContainer()
     read_container.load_alignment_data(args.alignment_file)
     #---SET TAXIDS FOR ALL ALIGNMENTS--#
     read_container.set_taxids(dataAccess)
-    print 'done'
+
+    end = time.time()
+    print("done: {0:.2f} sec".format(end - start))
+
+    # ------------------ #
 
     # Create folder if does not exist
     if not os.path.exists(args.export_folder):
@@ -150,6 +311,8 @@ def main():
 
     if args.remove_host:
         print "Removing host..."
+        start = time.time()
+
         #------- FILTER HOST READS -------#
         #print '3. Filtering host reads & alignments...'
         new_reads = host_filter.filter_potential_host_reads(
@@ -185,51 +348,81 @@ def main():
         cds_summary.write("non-host: {0:8d} {1:.2f}\n".format(non_host_read_count, 
                                       non_host_read_count / float(read_count)
                                       ))
-
+        # Set host-free reads
         read_container.set_new_reads(reads_with_no_host_alignments)
-        print "done"
 
-    # ------------------------------------- #
+        end = time.time()
+        print("done: {0:.2f} sec".format(end - start))
 
-    #----------------------------------#
     #------- LOAD ALL RECORDS   -------#
+
     print '4. Loading referenced records...'
+    start = time.time()
+
     record_container = RecordContainer()
     record_container.set_db_access(dataAccess)
     record_container.populate(read_container.fetch_all_reads_versions(), table='cds')
-    print 'done'
-    #----------------------------------#
+
+    end = time.time()
+    print("done: {0:.2f} sec".format(end - start))
+
     #-- MAP ALIGNMENTS TO GENES   -----#
+
     print '5. Mapping alignments to genes...'
+    start = time.time()
+
     read_container.populate_cdss(record_container)
-    print 'done'
-    #----------------------------------#
+
+    end = time.time()
+    print("done: {0:.2f} sec".format(end - start))
+
     #- RECORD ALL ALIGNEMENTS TO GENE -#
+
     print '6. Populating CDS container...'
+    start = time.time()
+
     cds_aln_container = CdsAlnContainer()
     cds_aln_container.populate(read_container.fetch_all_reads(format=list))
-    print 'done'
 
-    cds_alns = cds_aln_container.fetch_all_cds_alns(format=list)
+    end = time.time()
+    print("done: {0:.2f} sec".format(end - start))
+
+    # ------------------------------- #
+
+    print 'Sorting CDSs ...DISABLED'
+    start = time.time()
 
     # Sort CDSs by their "good looks"!
+    cds_alns = cds_aln_container.fetch_all_cds_alns(format=list)
+    '''
     cds_alns = sorted(cds_alns,
                     key=lambda cds_aln: cds_aln.get_std_over_mean(),
                     reverse=False)
+    '''
+    end = time.time()
+    print("done: {0:.2f} sec".format(end - start))
 
+    # ------------------------------- #
+
+    '''
     print "Exporting phase 0 - all CDSs..."
     export_CDS_stats_data(cds_alns, args.export_folder, "0_all_CDSs.txt")
     print "done"
+    '''
 
     # Count Nones in cds_alns
     nones = count_nones(cds_alns)
+    cds_summary.write("\n")
     cds_summary.write("gene None       : {0}\n".format(nones['gene']))
     cds_summary.write("protein_id  None: {0}\n".format(nones['protein_id']))
     cds_summary.write("product  None   : {0}\n".format(nones['product']))
+    cds_summary.write("\n")
 
     cds_summary.write("CDSs all: {0}\n".format(len(cds_alns)))
 
     print 'Filtering valid CDSs...'
+    start = time.time()
+
     # Take only CDSs of given tax_id
     # Remove CDSs with too low mean coverage value
     min_mean_coverage   = 0
@@ -244,13 +437,19 @@ def main():
                          if cds_aln.cds.product is not None]
                          #if  cds_aln.cds.gene != None
                          #and cds_aln.cds.product != None]
-    print 'done'
+
+    end = time.time()
+    print("done: {0:.2f} sec".format(end - start))
 
 
     # All valid CDSs - Output coverage/length histogram data
     print "Exporting phase 1 - all CDSs..."
+    start = time.time()
+
     export_CDS_stats_data(cds_alns_targeted, args.export_folder, "1_all_valid_CDSs.txt")
-    print "done"
+
+    end = time.time()
+    print("done: {0:.2f} sec".format(end - start))
 
     # ------------------- CDSs filtered and ready to be analyzed ------------------- #
 
@@ -266,7 +465,10 @@ def main():
         product     = cds_aln.cds.product
         protein_id  = cds_aln.cds.protein_id
 
-        if "ribosomal" in product:
+
+
+        # TODO: make a function for this
+        if is_ribosomal(product):
             #print("{0} {1} {2}\n".format(gene, protein_id, product))
             cds_alns_ribosomal.append(cds_aln)
 
@@ -296,7 +498,7 @@ def main():
     export_CDS_stats_data(cds_alns_ribosomal, args.export_folder, "2_ribosomal_CDSs.txt")
     print "done"
 
-    # ------------------- Making biological sense -------------------- #
+    # ------------------- Making biological sense - choosing CDSs -------------------- #
 
     print 'Filtering under-average ribosomals...'
     # NOTE: take length into consideration?
@@ -305,40 +507,140 @@ def main():
                          if cds_aln.get_mean_coverage() > mm_cov]
     print 'done'
     cds_summary.write("ribosomals over-mean: {0}\n".format(len(cds_alns_ribosomal)))
-
-    # Filtered ribosomal CDSs only - Output coverage/length histogram
-
-    # Species level resolution
-    # See with species are present - dump ones with not enough CDSs
-    # NOTE: So far done in determine_species_by_ribosomals.py
+    cds_summary.close()
 
     print 'Phase 3 - filtered ribosomal CDSs...'
     export_CDS_stats_data(cds_alns_ribosomal, args.export_folder, "3_ribosomal_CDSs_filtered.txt")
     print 'done'
     
-    '''
-    for cds_aln in cds_alns_ribosomal:
-        gene        = cds_aln.cds.gene
-        protein_id  = cds_aln.cds.protein_id
-        tax_id      = cds_aln.cds.taxon
-        # Quality measure data
-        measure = cds_aln.get_std_over_mean()
-        std     = cds_aln.get_coverage_std_dev()
-        mean    = cds_aln.get_mean_coverage()
-        length  = cds_aln.get_cds_length()
-        cds_data.write('{0:4} {1:10} {2:10d} {3:10.4f} {4:8.4f} {5:8.4f} {6:8d}\n'.format(gene, 
-                                                                    protein_id, tax_id, 
-                                                                    measure, std, mean, length))
-    '''
-    cds_summary.close()
-    
-    # Store graph data
+    # Store charts cov data - if selected so
     if args.export_charts:
+        print "Exporting chart coverage data..."
         export_CDS_graph_data(cds_alns_ribosomal, args.export_charts)
+        print "done."
+
+    # --------------------- I have chosen CDSs - determine species and analyse ------------------------ #
+
+    # Species level resolution
+    # See which species are present - dump ones with not enough CDSs
+    # NOTE: So far done in determine_species_by_ribosomals.py
+
+    CDS_count   = {}    # Count CDSs of each species
+    species_set = set() # Get estimated tax_ids
+    for cds_aln in cds_alns_ribosomal:
+        tax_id = cds_aln.cds.taxon
+
+        # Put each tax_id up to the "species" level
+        tax_id_species = tax_tree.get_parent_with_rank(tax_id, 'species')
+
+        species_set.add(tax_id_species)
+        CDS_count[tax_id_species] = CDS_count.get(tax_id_species, 0) + 1
+
+    # Get reported CDSs ids
+    reported_CDS_ids = set()
+    for cds_aln in cds_alns_ribosomal:
+        reported_CDS_ids.add(cds_aln.cds.id)
+
+    # ------------ Read assignment analysis -------------- #
+
+    print "Read assignment analysis..."
+
+    reads = read_container.fetch_all_reads(format=list)
+    assignment_analysis(species_set, reads, tax_tree, args.export_folder, CDS_count)
+
+    '''
+    readsAssignedToTax   = 0
+    readsUnassignedToTax = 0
+
+    readsAsnToCDS   = 0
+    readsUnasnToCDS = 0
+
+    readsAsnToCDS_first = 0
+
+    # Average number of alignments per read
+    avg_aln_num = 0
+    # Reads without alns
+    no_aln_reads = 0
+
+    # Check each read and see if has any alignment to some tax_id from speciesSet
+    reads = read_container.fetch_all_reads(format=list)
+    for read in reads:
+        assignedToTax = False
+        assignedToCDS = False
+        on_first_aln  = False # TODO: use array for histogram
+
+        aln_num = len(read.get_alignments())
+        avg_aln_num += aln_num
+        # Count reads without alns
+        if aln_num == 0:
+            no_aln_reads += 1
+
+        aln_idx = 0
+        for aln in read.get_alignments():
+            aln_idx += 1
+
+            # Check if maps to the reported tax_id - put up to species
+            tax_id = aln.tax_id
+            tax_id_species = tax_tree.get_parent_with_rank(tax_id, 'species')
+            if tax_id_species in species_set:
+                assignedToTax = True
+
+            # Check if maps to the reported CDS
+            cdss = [pair[0] for pair in aln.aligned_cdss] # pair = (cds, location)
+            for cds in cdss:
+                if cds.id in reported_CDS_ids:
+                    assignedToCDS = True
+                    # Store aln index - is first?
+                    if aln_idx == 1:
+                        on_first_aln = True
+                        
+        # Count state
+        # TODO: use total reads count
+        if assignedToTax:
+            readsAssignedToTax += 1
+        else:
+            readsUnassignedToTax += 1
+
+        if assignedToCDS:
+            readsAsnToCDS += 1
+        else: 
+            readsUnasnToCDS += 1
+
+        if on_first_aln:
+            readsAsnToCDS_first += 1
+
+    avg_aln_num = float(avg_aln_num) / read_container.get_read_count()
+
+    # Write to assignment summary to special file
+    assn_summary_path = os.path.join(args.export_folder, "assignment_summary.txt")
+
+    with open(assn_summary_path, 'w') as f:
+
+        total_reads = read_container.get_read_count()
+        f.write("Total reads: {0}\n".format(total_reads))
+        f.write("Number of species: {0}\n".format(len(species_set)))
+
+        f.write("Mean aln number per read: {0:.2f}\n".format(avg_aln_num))
+        f.write(perc_format("Reads with 0 alns ", no_aln_reads, total_reads))
+        f.write("\n")
+        f.write(perc_format("Reads assigned to tax ", readsAssignedToTax, total_reads))
+        f.write(perc_format("Reads unassigned to tax ", readsUnassignedToTax, total_reads))
+        f.write("\n")
+        f.write(perc_format("Reads assigned to CDS ", readsAsnToCDS, total_reads))
+        f.write(perc_format("Asb to CDS on 1st aln", readsAsnToCDS, total_reads))
+
+    print "done."
+    '''
+
+
 
     # ----------------------- Read assigning phase -------------------------- #
 
     # Go through all reads and look who can be assigned where
+
+    # TO BE IMPLEMENTED
+
+    # read_container
 
 if __name__ == '__main__':
     main()

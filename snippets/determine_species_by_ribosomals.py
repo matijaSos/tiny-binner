@@ -14,7 +14,7 @@ class ArgParser(DefaultBinnerArgParser):
     def __init__(self):
         super(ArgParser, self).__init__('''\
                 Takes file with ribosomal CDSs data, \
-                and determines present organisms. \
+                and estimates present organisms. \
                 .''')
         self.add_argument('cds_data_file',
                 help='file with ribosomal CDSs',
@@ -49,7 +49,7 @@ def main():
         species[tax_id] = species.get(tax_id, 0) + 1
 
     # Remove species with not enough CDSs
-    minCDSNum = 2 # Set as parameter
+    minCDSNum = 1 # Set as parameter
     keysToPop = []
     for key, val in species.iteritems():
         if val < minCDSNum: keysToPop.append(key)
@@ -71,7 +71,7 @@ def main():
         num     = species[tax_id]
         frac    = float(num)/total * 100
         try:
-            name    = tax_tree.nodes[int(tax_id)].organism_name
+            name = tax_tree.nodes[int(tax_id)].organism_name
         except:
             name = "unknown"
         print("{0:10} {1:80} {2:8d} {3:10.4f}%".format(tax_id, name, num, frac))

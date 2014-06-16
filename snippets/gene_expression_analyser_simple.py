@@ -60,7 +60,7 @@ def export_CDS_graph_data(cds_alns, export_path):
 
 def main():
     '''
-    Script to analyse  genes expressed for given tax id.
+    Script to identify analyse ribosomal genes expressed.
     '''
 
     # Input arguments
