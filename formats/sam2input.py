@@ -25,11 +25,15 @@ class SamParser(object):
                 continue
             # next read
             else:
-                self._process_reads(reads_to_process, sam_file, output_file)
+                try:
+                    self._process_reads(reads_to_process, sam_file, output_file)
+                except Exception:
+                    print "alen and aend are None!" 
                 reads_to_process = [readAlignment]
                 last_read_id = readAlignment.qname
-        self._process_reads(reads_to_process, sam_file, output_file)
 
+        # The last one?
+        self._process_reads(reads_to_process, sam_file, output_file)
         output_file.close()
 
     def _process_reads(self, reads_to_process, sam_file, output_file):

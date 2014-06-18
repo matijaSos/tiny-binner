@@ -1,4 +1,3 @@
-
 import argparse
 import sys,os
 import time
@@ -66,7 +65,7 @@ def export_CDS_stats_data(cds_alns, export_folder, export_file):
 
             protein_id  = cds_aln.cds.protein_id
             tax_id      = cds_aln.cds.taxon
-            product     = cds_aln.cds.product # TODO: this one should be optional!
+            product     = cds_aln.cds.product # TODO: this one should be optional to output!
             # Quality measure data
             # measure = cds_aln.get_std_over_mean()
             # std     = cds_aln.get_coverage_std_dev()

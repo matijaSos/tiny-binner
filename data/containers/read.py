@@ -92,7 +92,12 @@ class ReadContainer (object):
 
     def _add_read_from_str (self, read_str):
         read = Read.from_read_str(read_str)
-        assert (not self.read_repository.has_key(read.id))
+
+        # assert (not self.read_repository.has_key(read.id)) # Make sure that this read is not already loaded
+        # Paired reads hack
+        if self.read_repository.has_key(read.id):
+            read.id = read.id + '#2'
+
         self.read_repository[read.id] = read
 
     def get_read_count(self):
