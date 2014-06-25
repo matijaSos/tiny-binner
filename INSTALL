@@ -5,6 +5,8 @@ Ubuntu:
     sudo apt-get install libmysqlclient-dev python-dev
 Archlinux:
     sudo pacman -S libgda
+Fedora:
+    sudo yum install mysql mysql++-devel
 
 1. Installation
 
