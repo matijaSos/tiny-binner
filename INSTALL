@@ -30,8 +30,3 @@ deactivate
 To install all the required packages into the virtual environment, first
 activate the virtual environment and then run the following command:
 pip install -r requirements.txt
-
-1.3. Install Binner for development
-To register the project main folder in the path used for import statements run
-the folowing command:
-python setup.py develop
