@@ -17,4 +17,4 @@ Current functionalities are located in folder **snippets/**:
 Idea here is to identify present species based on the presence of ribosomal coding sequences in the given metagenomic
 sample.
 
-**get_ribosomal_CDS_data** - Get binning output with statistics of each processing phase.
+* **get_ribosomal_CDS_data** - Get binning output with statistics of each processing phase.
