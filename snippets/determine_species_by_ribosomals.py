@@ -44,12 +44,16 @@ def main():
     species = {}
     for line in lines:
         row_data = line.split()
-        tax_id = row_data[2]
+
+        tax_id = int(row_data[2])
+        tax_id_species = tax_tree.get_parent_with_rank(tax_id, 'species')
+
+        # TODO: up to the species rank!
         # Add to dict
-        species[tax_id] = species.get(tax_id, 0) + 1
+        species[tax_id_species] = species.get(tax_id_species, 0) + 1
 
     # Remove species with not enough CDSs
-    minCDSNum = 1 # Set as parameter
+    minCDSNum = 10 # Set as parameter
     keysToPop = []
     for key, val in species.iteritems():
         if val < minCDSNum: keysToPop.append(key)
@@ -78,7 +82,7 @@ def main():
 
         # Chart data
         label = name.replace(" ", "\n")
-        if num < 3:
+        if num < 40:
             label = ''
 
         labels.append(label)
@@ -86,12 +90,12 @@ def main():
         explode.append(0)
 
     # Create and save pie chart
-    figure(1, figsize=(15,15))
-    ax = axes([0.15, 0.15, 0.75, 0.75])
+    figure(1, figsize=(12,12))
+    ax = axes([0.10, 0.10, 0.80, 0.80])
     explode[0] = 0.1
 
     pie(fracs, explode=explode, labels=labels, 
-        autopct='%1.1f%%', shadow=True, startangle=90)
+        autopct='%1.1f%%', shadow=False, startangle=90)
     title('Microbiome: ' + str(total) + " CDSs")
 
     savefig(args.img_export_path, format='png')

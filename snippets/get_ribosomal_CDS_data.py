@@ -422,8 +422,7 @@ def main():
     print 'Filtering valid CDSs...'
     start = time.time()
 
-    # Take only CDSs of given tax_id
-    # Remove CDSs with too low mean coverage value
+    # Remove CDSs with too low mean coverage value or length
     min_mean_coverage   = 0
     min_length          = 0
     cds_alns_targeted = [cds_aln for cds_aln in cds_alns 
@@ -439,7 +438,6 @@ def main():
 
     end = time.time()
     print("done: {0:.2f} sec".format(end - start))
-
 
     # All valid CDSs - Output coverage/length histogram data
     print "Exporting phase 1 - all CDSs..."
@@ -464,9 +462,6 @@ def main():
         product     = cds_aln.cds.product
         protein_id  = cds_aln.cds.protein_id
 
-
-
-        # TODO: make a function for this
         if is_ribosomal(product):
             #print("{0} {1} {2}\n".format(gene, protein_id, product))
             cds_alns_ribosomal.append(cds_aln)
