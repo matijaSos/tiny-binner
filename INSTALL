@@ -1,3 +1,10 @@
+0. Prior requirements:
+Make sure that MySQL database is installed on you system.
+Ubuntu:
+    sudo apt-get install libmysqlclient-dev python-dev
+Archlinux:
+    sudo pacman -S libgda
+
 1. Installation
 
 1.1. Virtual envoronment - sandbox
