@@ -1,5 +1,6 @@
-0. Prior requirements:
-Make sure that MySQL database is installed on you system.
+0. Prior requirements
+
+Make sure that MySQL database is installed on your system.
 Ubuntu:
     sudo apt-get install libmysqlclient-dev python-dev
 Archlinux:
