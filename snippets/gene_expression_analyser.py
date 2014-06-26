@@ -1,7 +1,7 @@
 
 import argparse
 import sys,os
-sys.path.append(os.getcwd())
+sys.path.append(os.getcwd()) # What's the purpose of this?
 
 from utils.argparser import DefaultBinnerArgParser
 from ncbi.db.data_access import DataAccess

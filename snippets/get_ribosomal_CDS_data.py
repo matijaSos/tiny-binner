@@ -1,7 +1,8 @@
 import argparse
 import sys,os
 import time
-sys.path.append(os.getcwd())
+
+#sys.path.append(os.getcwd()) # What's this doing?
 
 from utils.argparser import DefaultBinnerArgParser
 from ncbi.db.data_access import DataAccess
@@ -49,6 +50,8 @@ def export_CDS_stats_data(cds_alns, export_folder, export_file):
         cds_alns        ([CdsAlignment]):   Array of cds alignments objects
         export_folder   (string):           Folder to export the data to
         export_file     (string):           File name to save the data to
+    Returns:
+        None
     '''
 
     # Create folder if does not exist
@@ -263,11 +266,7 @@ def assignment_analysis(tax_ids, reads, tax_tree, export_folder, CDS_count=None)
         '''
 
 
-
 def main():
-    '''
-    Script to analyse  genes expressed for given tax id.
-    '''
 
     # Input arguments
     argparser   = ArgParser()
@@ -541,100 +540,6 @@ def main():
 
     reads = read_container.fetch_all_reads(format=list)
     assignment_analysis(species_set, reads, tax_tree, args.export_folder, CDS_count)
-
-    '''
-    readsAssignedToTax   = 0
-    readsUnassignedToTax = 0
-
-    readsAsnToCDS   = 0
-    readsUnasnToCDS = 0
-
-    readsAsnToCDS_first = 0
-
-    # Average number of alignments per read
-    avg_aln_num = 0
-    # Reads without alns
-    no_aln_reads = 0
-
-    # Check each read and see if has any alignment to some tax_id from speciesSet
-    reads = read_container.fetch_all_reads(format=list)
-    for read in reads:
-        assignedToTax = False
-        assignedToCDS = False
-        on_first_aln  = False # TODO: use array for histogram
-
-        aln_num = len(read.get_alignments())
-        avg_aln_num += aln_num
-        # Count reads without alns
-        if aln_num == 0:
-            no_aln_reads += 1
-
-        aln_idx = 0
-        for aln in read.get_alignments():
-            aln_idx += 1
-
-            # Check if maps to the reported tax_id - put up to species
-            tax_id = aln.tax_id
-            tax_id_species = tax_tree.get_parent_with_rank(tax_id, 'species')
-            if tax_id_species in species_set:
-                assignedToTax = True
-
-            # Check if maps to the reported CDS
-            cdss = [pair[0] for pair in aln.aligned_cdss] # pair = (cds, location)
-            for cds in cdss:
-                if cds.id in reported_CDS_ids:
-                    assignedToCDS = True
-                    # Store aln index - is first?
-                    if aln_idx == 1:
-                        on_first_aln = True
-                        
-        # Count state
-        # TODO: use total reads count
-        if assignedToTax:
-            readsAssignedToTax += 1
-        else:
-            readsUnassignedToTax += 1
-
-        if assignedToCDS:
-            readsAsnToCDS += 1
-        else: 
-            readsUnasnToCDS += 1
-
-        if on_first_aln:
-            readsAsnToCDS_first += 1
-
-    avg_aln_num = float(avg_aln_num) / read_container.get_read_count()
-
-    # Write to assignment summary to special file
-    assn_summary_path = os.path.join(args.export_folder, "assignment_summary.txt")
-
-    with open(assn_summary_path, 'w') as f:
-
-        total_reads = read_container.get_read_count()
-        f.write("Total reads: {0}\n".format(total_reads))
-        f.write("Number of species: {0}\n".format(len(species_set)))
-
-        f.write("Mean aln number per read: {0:.2f}\n".format(avg_aln_num))
-        f.write(perc_format("Reads with 0 alns ", no_aln_reads, total_reads))
-        f.write("\n")
-        f.write(perc_format("Reads assigned to tax ", readsAssignedToTax, total_reads))
-        f.write(perc_format("Reads unassigned to tax ", readsUnassignedToTax, total_reads))
-        f.write("\n")
-        f.write(perc_format("Reads assigned to CDS ", readsAsnToCDS, total_reads))
-        f.write(perc_format("Asb to CDS on 1st aln", readsAsnToCDS, total_reads))
-
-    print "done."
-    '''
-
-
-
-    # ----------------------- Read assigning phase -------------------------- #
-
-    # Go through all reads and look who can be assigned where
-
-    # TO BE IMPLEMENTED
-
-    # read_container
 
 if __name__ == '__main__':
     main()
