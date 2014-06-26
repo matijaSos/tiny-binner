@@ -42,7 +42,9 @@ class BLASTParser (object):
             line = line.strip()
             if not line:
                 break
-            
+           
+            if line.startswith('#'):
+                continue 
             (new_read_id, aln_data) = self.parse_line(line)
             if not read_id:
                 read_id = new_read_id
@@ -63,8 +65,7 @@ class BLASTParser (object):
             output_line += str(alignment) + ";"
         return output_line
     
-    def parse_line (self, line):
-        
+    def parse_line (self, line): 
         aln_data_list   = line.split()
         subject_id      = aln_data_list[self.fmt_values['sseqid']]
         (gi, db_source, nucl_accession) = subject_id.split('|')[1:4]
