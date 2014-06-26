@@ -5,7 +5,7 @@ import logging.config
 import argparse
 import sys,os
 import operator
-sys.path.append(os.getcwd())
+#sys.path.append(os.getcwd())
 
 from utils.argparser import DefaultBinnerArgParser
 from ncbi.db.data_access import DataAccess

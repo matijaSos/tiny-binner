@@ -1,6 +1,5 @@
 from  collections       import defaultdict
 import os,sys
-sys.path.append(os.getcwd())
 from utils.progressbar import print_progress
 
 class TaxTree ():
