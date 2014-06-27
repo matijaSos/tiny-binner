@@ -28,4 +28,4 @@ If you have acquired .sam file as output, use <code>formats/sam2input.py</code> 
 If you have acquired .blast file as output, use <code>formats/blast2input.py</code> to get .in file.<br/>
 
 Having .in file ready, run <code>python snippets/get_ribosomal_CDS_data input_file.in output_folder</code>.<br/>
-Add <code>--remove_host</code> for host.
+Add <code>--remove_host</code> for host removal.
