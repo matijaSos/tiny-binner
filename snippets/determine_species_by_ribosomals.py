@@ -48,7 +48,6 @@ def main():
         tax_id = int(row_data[2])
         tax_id_species = tax_tree.get_parent_with_rank(tax_id, 'species')
 
-        # TODO: up to the species rank!
         # Add to dict
         species[tax_id_species] = species.get(tax_id_species, 0) + 1
 
