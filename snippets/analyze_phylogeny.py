@@ -12,7 +12,7 @@ import ncbi.taxonomy.ranks as rank
 def iter_tax_nodes(fname):
 	with open(fname) as fin:
 		for line in fin:
-			yield int(line.strip().split('\t')[1])
+			yield int(line.strip().split()[1])
 
 def iter_filtered_taxa(tree, rank2num, nodes, level):
 	for node in nodes:
@@ -23,13 +23,14 @@ def iter_filtered_taxa(tree, rank2num, nodes, level):
 		if ranknum <= level or ranknum == 28:
 			yield node
 
-def plot_data(composition, tree):
+def plot_data(composition, tree, _title=None):
 	N = len(composition)
 	colors = cm.Set1(np.arange(N, 0, -1)/float(N))
 	total = sum(composition.values())
 
 	# make a square figure and axes
-	figure(1, figsize=(6,6))
+	#figure(1, figsize=(6,6))
+	figure(figsize=(6,6))
 	ax = axes([0.1, 0.1, 0.8, 0.8])
 
 	# The slices will be ordered and plotted counter-clockwise.
@@ -43,8 +44,21 @@ def plot_data(composition, tree):
 
 	pie(fracs, colors=colors, startangle=90)
 	legend(labels, loc="lower right")
-	title('Bacterial class distribution')
-	show()
+	if _title is None:
+		title('Bacterial class distribution')
+	else:
+		title(_title)
+	#show()
+
+def determine_composition(tax_nodes, tree, depth):
+	rank2num = rank.ranks
+	composition = defaultdict(int)
+	interesting_taxa = filter(lambda n: rank2num.get(tree.nodes[n].rank, -1) == depth, tree.nodes.keys())
+	for taxid in interesting_taxa:
+		for found_node in tax_nodes:
+			if tree.is_child(found_node, taxid):
+				composition[taxid] += 1
+	return composition
 
 
 def main():
@@ -62,12 +76,7 @@ def main():
 
 	tax_nodes = list(iter_tax_nodes(sys.argv[1]))
 
-	composition = defaultdict(int)
-	interesting_taxa = filter(lambda n: rank2num.get(tree.nodes[n].rank, -1) == depth, tree.nodes.keys())
-	for taxid in interesting_taxa:
-		for found_node in tax_nodes:
-			if tree.is_child(found_node, taxid):
-				composition[taxid] += 1
+	composition = determine_composition(tax_nodes, tree)
 
 	plot_data(composition, tree)
 
