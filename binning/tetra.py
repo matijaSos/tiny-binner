@@ -1,5 +1,3 @@
-import sys,os
-sys.path.append(os.getcwd())
 
 from itertools import product
 from collections import defaultdict
@@ -30,7 +28,7 @@ def create_database(fasta_db, output_file, data_access):
 
 		fout.write('# SOURCE FILE: %s\n# FORMAT:\n' % fasta_db)
 		fout.write('# gi taxid\n')
-		fout.write('# frequencies (256 element vector from AAAA to TTTT)')
+		fout.write('# frequencies (256 element vector from AAAA to TTTT)\n')
 
 		i = 0
 		records = SeqIO.parse(fin, 'fasta')
@@ -42,17 +40,4 @@ def create_database(fasta_db, output_file, data_access):
 			fout.write('%d %d\n' % (gi, tax))
 			fout.write('%s\n', ' '.join(map(lambda f: '%.4f' % f, [freqs[t] for t in TETRAS])))
 			i += 1
-			print i
-
-
-def main():
-
-	argparser = DefaultBinnerArgParser('Creates a database from input fasta file.')
-	args = argparser.parse_args()
-	data_access = DataAccess(args)
-	fasta_db = '/home/ana/Data/metagenome/db/all_bacteria.fa'
-	output_file = '/home/ana/Data/metagenome/db/allbact.tetra.db'
-	create_database(fasta_db, output_file, data_access)
-
-if __name__ == '__main__':
-	main()
+			print 'Processing %5d. sequence...' % i
