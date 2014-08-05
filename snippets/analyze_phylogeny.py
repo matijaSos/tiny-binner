@@ -1,10 +1,11 @@
 import sys, os
-from collections import defaultdict
-from itertools import chain
-from pylab import *
-import numpy as np
-from matplotlib import cm
 sys.path.append(os.getcwd())
+from itertools import chain
+from collections import defaultdict
+
+import numpy as np
+from pylab import *
+from matplotlib import cm
 
 import ncbi.taxonomy.tree as taxtree
 import ncbi.taxonomy.ranks as rank
@@ -48,7 +49,7 @@ def plot_data(composition, tree, _title=None):
 		title('Bacterial class distribution')
 	else:
 		title(_title)
-	#show()
+	show()
 
 def determine_composition(tax_nodes, tree, depth):
 	rank2num = rank.ranks
