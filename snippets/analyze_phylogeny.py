@@ -9,10 +9,10 @@ sys.path.append(os.getcwd())
 import ncbi.taxonomy.tree as taxtree
 import ncbi.taxonomy.ranks as rank
 
-def iter_tax_nodes(fname):
+def iter_tax_nodes(fname, tax_id_index):
 	with open(fname) as fin:
 		for line in fin:
-			yield int(line.strip().split()[1])
+			yield int(line.strip().split()[tax_id_index])
 
 def iter_filtered_taxa(tree, rank2num, nodes, level):
 	for node in nodes:
@@ -63,20 +63,21 @@ def determine_composition(tax_nodes, tree, depth):
 
 def main():
 	rank2num = rank.ranks
-	if len(sys.argv) < 3:
-		print 'Usage: python analyze_phylogeny.py [INPUT_FILE] [TAXONOMIC_DEPTH] [[OUTPUT_FIGURE]]'
+	if len(sys.argv) < 4:
+		print 'Usage: python analyze_phylogeny.py [INPUT_FILE] [TAXONOMIC_DEPTH] [TAX_ID_INDEX] [[OUTPUT_FIGURE]]'
 		print 'Available taxonomic depths:'
 		print '\n'.join(map(lambda r: '%3d\t%s' % (r[1], r[0]), sorted(rank2num.items(), key=lambda i: i[1])))
 		sys.exit(-1)
 
 	depth = int(sys.argv[2])
+	tax_id_index = int(sys.argv[3])
 	print 'Loading NCBI taxonomy tree...'
 	tree = taxtree.TaxTree()
 	print 'DONE'
 
-	tax_nodes = list(iter_tax_nodes(sys.argv[1]))
+	tax_nodes = list(iter_tax_nodes(sys.argv[1], tax_id_index))
 
-	composition = determine_composition(tax_nodes, tree)
+	composition = determine_composition(tax_nodes, tree, depth)
 
 	plot_data(composition, tree)
 
