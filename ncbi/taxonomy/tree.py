@@ -143,6 +143,8 @@ class TaxTree ():
         return reversed(lineage)
 
     def get_parent_with_rank(self, tax_id, rank):
+        if tax_id not in self.nodes:
+	    return -1
         parent = 0
         while (True):
             if tax_id == self.root:
