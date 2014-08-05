@@ -5,6 +5,7 @@ sys.path.append(os.getcwd())
 from Bio import SeqIO
 
 import binning.tetra as tetra
+from ncbi.taxonomy.tree import TaxTree
 
 def main():
 	if len(sys.argv) < 3:
@@ -15,10 +16,12 @@ def main():
 	fasta_file = sys.argv[2]
 
 	db_freqs = tetra.load_database(db_file)
+	tt = TaxTree()
 	with open(fasta_file) as fin:
 		records = SeqIO.parse(fin, 'fasta')
 		for rec in records:
-			print tetra.assign_sequence(str(rec.seq), db_freqs)
+			corr, tax = tetra.assign_sequence(str(rec.seq), db_freqs)
+			print tax, tt.nodes[tax].organism_name
 
 if __name__ == '__main__':
 	main()
