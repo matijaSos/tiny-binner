@@ -1,12 +1,13 @@
+
 import argparse
 import sys,os
 import time
-
-#sys.path.append(os.getcwd()) # What's this doing?
+sys.path.append(os.getcwd())
 
 from utils.argparser import DefaultBinnerArgParser
 from ncbi.db.data_access import DataAccess
 from ncbi.taxonomy.tree import TaxTree
+import ncbi.taxonomy.ranks as tax_ranks
 from data.containers.read import ReadContainer
 
 import filters.host as host_filter
@@ -156,10 +157,13 @@ def count_nones(cds_alns):
     return nones
 
 def perc_format(text, part, total):
-    return "{0}: {1:.2f} ({2})\n".format(text, part/float(total), part)
+    if total:
+        return "{0}: {1:.2f} ({2})\n".format(text, part/float(total), part)
+    else:
+        return "{0}: {1:.2f} ({2})\n".format(text, 0., part)
 
 
-def export_species_data(species_data, total_reads, export_path, tax_tree, CDS_count=None):
+def export_species_data(species_data, total_reads, export_path, tax_tree, CDS_count=None, species2read=None):
 
     with open(export_path, 'w') as f:
         for tax_id in sorted(species_data, key=species_data.get, reverse=True):
@@ -176,6 +180,9 @@ def export_species_data(species_data, total_reads, export_path, tax_tree, CDS_co
             if CDS_count:
                 cds_count = CDS_count[tax_id]
                 line += "  CDSs: {0:5d}".format(cds_count)
+
+            if species2read is not None:
+                line += " %s" % ';'.join(species2read[int(tax_id)])
 
             f.write(line + "\n")
 
@@ -204,6 +211,10 @@ def assignment_analysis(tax_ids, reads, tax_tree, export_folder, CDS_count=None)
     # Stats
     reads_assigned  = 0
     no_aln_reads    = 0
+    from collections import defaultdict, Counter
+    species2read = defaultdict(list)
+    read2taxid = defaultdict(list)
+    discared_reads = list()
 
     for read in reads:
 
@@ -217,8 +228,26 @@ def assignment_analysis(tax_ids, reads, tax_tree, export_folder, CDS_count=None)
 
         for aln in read.get_alignments():
             tax_id = tax_tree.get_parent_with_rank(aln.tax_id, 'species')
+            if tax_id:
+                read2taxid[read.id].append(tax_id)
             if tax_id in tax_ids:
                 fits.add(tax_id)
+
+        taxa = set(read2taxid[read.id])
+        if 0 in taxa:
+            taxa.remove(0)
+        if 1 in taxa:
+            taxa.remove(1)
+        if not taxa:
+            discared_reads.append(read.id)
+            continue
+        lca = tax_tree.find_lca(taxa)
+        lca_rank = tax_tree.nodes[lca].rank
+        # if tax_ranks.ranks[lca_rank] < tax_ranks.ranks['family'] or lca == tax_tree.root or len(taxa) > 5:
+        #if tax_ranks.ranks[lca_rank] < tax_ranks.ranks['family'] or lca == tax_tree.root:
+        #    discared_reads.append(read.id)
+        #    continue
+
 
         if fits:
             reads_assigned += 1
@@ -228,19 +257,47 @@ def assignment_analysis(tax_ids, reads, tax_tree, export_folder, CDS_count=None)
         else:
             # Unassigned reads
             species_set = set()
+
+            taxa = list()
             for aln in read.get_alignments():
                 tax_id = tax_tree.get_parent_with_rank(aln.tax_id, 'species')
-                species_set.add(tax_id)
-            for tax_id in species_set:
-                species_new[tax_id] = species_new.get(tax_id, 0) + 1
+                if tax_id in (0, 1):
+                    continue
+                taxa.append(tax_id)
+            c = Counter(taxa)
+            mc_tid, mc_count = c.most_common(1)[0]
+            species_new[mc_tid] = species_new.get(mc_tid, 0) + 1
+            species2read[mc_tid].append(read.id)
 
-            
+
+
+            # for aln in read.get_alignments():
+            #     tax_id = tax_tree.get_parent_with_rank(aln.tax_id, 'species')
+            #     if tax_id in (0, 1):
+            #         continue
+            #     species_set.add(tax_id)
+            #     species2read[tax_id].append(read.id)
+            #     species_new[tax_id] = species_new.get(tax_id, 0) + 1
+            #     break
+            #for tax_id in species_set:
+
+
+    print len(discared_reads)
+    print 'Reads assigned', reads_assigned
+
     # Store analysis data - for given species
     species_given_path = os.path.join(export_folder, "species_ribosomal.txt")
     export_species_data(species_given, len(reads), species_given_path, tax_tree, CDS_count)
     # For "new", unexpected species
     species_new_path = os.path.join(export_folder, "species_new.txt")
-    export_species_data(species_new, len(reads), species_new_path, tax_tree)
+    export_species_data(species_new, len(reads), species_new_path, tax_tree, species2read=species2read)
+
+    read2tax_path = os.path.join(export_folder, "read2taxid.txt")
+    with open(read2tax_path, 'w') as fout:
+        for rid, taxs in read2taxid.items():
+            #fout.write('%s %s\n' % (rid, Counter(taxs).most_common()))
+            fout.write('%s %s\n' % (rid, ';'.join(map(lambda tax: str(tax), taxs))))
+
 
     # Create summary
     assn_summary_path = os.path.join(export_folder, "assignment_summary.txt")
